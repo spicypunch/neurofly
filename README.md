@@ -32,8 +32,8 @@
 <table>
 <tr>
 <td width="44%" align="center" valign="top">
-<img src="docs/assets/neural-status.png" alt="NeuroFly 실제 상태 창. 냄새, 단맛, 그림자, 접촉 입력과 뉴런 발화율을 표시한다." width="280" />
-<br /><sub>실제 앱의 상태 창</sub>
+<img src="docs/assets/neural-status.png" alt="NeuroFly 상태 창 예시. 냄새, 단맛, 그림자, 접촉 입력과 뉴런 발화율을 표시한다." width="280" />
+<br /><sub>상태 창 예시 · 기존 캡처</sub>
 </td>
 <td valign="top">
 
@@ -44,6 +44,7 @@
 - **감각 입력** — 가상 더듬이의 냄새, 단맛, 그림자, 접촉
 - **후각 중계** — 연결망을 통과한 좌우 DM1_lPN 활동
 - **운동 출력** — 전진·선회·회피·섭식에 사용하는 뉴런 활동
+- **몸체 반응** — 신경 출력으로 정한 이동 속도·선회·활동 상태
 - **감각 입력 연결** — 같은 자극에서 입력을 끄고 차이를 관찰하는 스위치
 
 배치할 때만 화면 클릭을 받아들이고, 평소에는 아래 앱으로 클릭을 통과시킵니다.
@@ -140,15 +141,21 @@ open dist/NeuroFly.app
 | 연결 지도 | FlyWire FAFB v783 · 뉴런 **139,255개** |
 | 그래프 | 방향성 연결 **15,091,983개** · 집계 시냅스 **54,492,922개** |
 | 신경 계산 | Metal에서 1ms 단계로 실행하는 leaky integrate-and-fire 모델 |
-| 냄새 | 좌우 ORN_DM1 입력 → DM1_lPN 중계 활동 측정 |
+| 냄새 입력 adapter | 좌우 ORN_DM1에 `sqrt(mean)` 크기와 좌우 대비 10배를 적용하고, 수용기 입력을 최대 **0.22**로 제한 |
+| 냄새 중계 | 좌우 ORN_DM1 입력 → 그래프를 통과한 DM1_lPN 중계 활동 측정 |
 | 단맛 | v783에 존재하는 원논문 sugar GRN 20개 → CB0701/MN9 출력 |
 | 그림자 | LC4/LPLC2 경로에 입력 → Giant Fiber 회피 출력 |
-| 선회 | 대칭 냄새로 좌우 편향을 보정한 후, 측정된 PN 출력을 2D 회전으로 해석 |
+| 선회 | 5개 농도 × 3개 좌우 대비, 총 15개 PN probe의 실측 발화율 lookup으로 방향을 해석 |
 | 몸체 | AppKit 투명 창 + SpriteKit의 간단한 2D 캐릭터 |
 
 기본 발화, 입력 크기, 가상 더듬이 간격, 출력 해석은 공학적으로 정한 값입니다.
+후각 adapter는 약한 냄새와 좌우 대비를 화면의 작은 몸체가 읽을 수 있게 만든 보정이며,
+DM1_lPN 값은 외부 입력을 그대로 표시한 값이 아니라 연결 그래프를 통과한 spike 기반 발화율입니다.
+냄새가 일정 시간 약해지면 디코더가 뉴런 출력의 이력만으로 최대 1.8초 동안 재탐색 선회를 넣습니다.
+이 입력 adapter와 PN lookup, 2D 운동 변환을 생물학적으로 검증된 food-seeking 회로 재현으로 해석하지 않습니다.
 신경삭·근육·유체역학을 포함한 전신 비행 모델은 구현하지 않았습니다.
 접촉 자극은 현재 설정에서 주로 회피 출력을 높이며, 자연스러운 몸 닦기까지 검증한 것은 아닙니다.
+뇌 공간의 기억 상태, 배고픔, 학습은 현재 구현하지 않았습니다.
 
 현재 데이터는 최신 **MaleCNS**와 다릅니다. 별도로 재현한 **Shiu et al.의 v630 Brian2 모델**과
 이 앱의 수정된 v783 Metal 모델도 수치적으로 동일하다고 취급하지 않습니다.
@@ -161,15 +168,19 @@ open dist/NeuroFly.app
 
 | 검증 항목 | 결과 |
 | :--- | :--- |
-| 코어 테스트 | **16개 통과** — 초기화 재현성, 감각 차단, 신경 출력과 몸체의 연결 등 |
-| 먹이 접근·섭식 | 고정 seed 42에서 앞·왼쪽·오른쪽 **세 배치 통과** |
-| 감각 차단 대조군 | 먹이가 없는 조건과 신경 출력·이동 경로가 **정확히 일치** |
-| 계산 속도 | 뇌 시간 10초를 **약 0.97초**에 계산 |
-| 메모리 | headless 프로세스 최대 resident memory **약 234 MiB** |
+| 코어 테스트 | **19개 통과** — 초기화 재현성, 감각 차단, 신경 출력과 몸체의 연결 등 |
+| 먹이 접근·섭식 | seed 42, 2,560 × 1,400 공간에서 거리 3개 × 방위 6개 **18개 모두 접촉·소비량 감소** |
+| 먹이 소비 범위 | 기본 run은 **15 / 18 전량 소비**(접촉 2.933–19.4초), warmup run은 접촉 2.2–25.266초 |
+| 뇌 warmup 대조 | 무입력 뇌 시간 10초 후에도 같은 초기 몸체 위치에서 18개 조건 모두 접촉·소비량 감소 |
+| 감각 차단 대조군 | 3개 대조 조건에서 먹이가 없는 조건과 신경 출력·이동 경로가 **정확히 일치** |
+| 이전 headless benchmark | 뇌 시간 10초를 **약 0.97초**에 계산한 기존 기록 |
+| 이전 benchmark 메모리 | 기존 headless 프로세스 최대 resident memory **약 234 MiB** |
 | 앱 패키지 | 다른 폴더로 옮긴 앱에서 데이터 로딩과 실행 확인 |
 
-속도·메모리는 창 렌더링과 장시간 배터리 사용을 포함하지 않은 측정입니다.
-모든 먹이 배치에서 최단 경로나 안정적인 탐색을 보장하지 않으며, 초기 선회 편향이 남아 있습니다.
+속도·메모리는 창 렌더링과 장시간 배터리 사용을 포함하지 않은 **이전 `--benchmark` 기록**입니다.
+후각 adapter가 변경된 현재 최종 앱의 GUI·runtime 성능과 동일한 수치로 보지 않습니다.
+18개 고정 조건을 두 가지 초기 신경 상태에서 확인한 결과는 모든 seed나 초기 조건에서 최단 경로와 안정적인 탐색을 보장하지 않으며,
+초기 선회 편향도 남아 있습니다.
 구체적인 조건과 검증 범위는 [검증 기록](docs/verification.md)을 참고하세요.
 
 <details>
@@ -185,13 +196,25 @@ swift run -c release NeuroFly --probe
 # 뇌 시간 10초의 계산 성능 측정
 swift run -c release NeuroFly --benchmark
 
-# 먹이 접근과 감각 차단 대조 실험
+# 넓은 먹이 탐색 grid: 18개 조건 + 감각 차단 대조군 3개
 mkdir -p artifacts
+swift run -c release NeuroFly --foraging > artifacts/foraging.json
+python3 scripts/verify-foraging.py artifacts/foraging.json --require-full-grid --require-contact
+
+# 앱 전체를 이동시키지 않고, 뇌만 무입력으로 10초 먼저 실행한 대조
+swift run -c release NeuroFly --foraging --foraging-warmup-seconds 10 > artifacts/foraging-warm.json
+python3 scripts/verify-foraging.py artifacts/foraging-warm.json --require-full-grid --require-contact
+
+# 기존 좌·정면·우 3배치도 같은 30초 관찰 시간으로 확인
 swift run -c release NeuroFly --experiment > artifacts/world-experiment.json
 python3 scripts/verify-experiment.py
 ```
 
 원저자 Brian2 모델의 별도 재현 절차는 [reference 실험 안내](tools/reference/README.md)에 있습니다.
+`--foraging`은 seed 42, 30초, Gaussian 냄새장(σ=180)의 2,560 × 1,400 공간을 사용합니다.
+`--foraging-warmup-seconds 10`은 몸체를 10초 동안 이동시키는 옵션이 아니라, 같은 초기 몸체 위치에서
+뇌만 무입력으로 10초 먼저 실행한 뒤 먹이 grid를 시작하는 대조입니다. 두 실행을 합쳐 고정 seed에서
+36개 먹이 조건(18개 × 2)이 접촉·소비량 감소까지 통과했습니다.
 실험 산출물은 로컬 `artifacts/`에 저장하며 Git에는 포함하지 않습니다.
 
 </details>

@@ -9,6 +9,9 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
     private let detailLabel = NSTextField(labelWithString: "")
     private let countsLabel = NSTextField(labelWithString: "뉴런 — · 연결 —")
     private let realtimeLabel = NSTextField(labelWithString: "실시간 배율 —")
+    private let bodySpeedLabel = NSTextField(labelWithString: "—")
+    private let bodyTurnLabel = NSTextField(labelWithString: "—")
+    private let bodyActivityLabel = NSTextField(labelWithString: "—")
     private let sensorySwitch = NSSwitch()
     private var sensoryRows: [(RateMeterView, NSTextField)] = []
     private var relayRows: [(RateMeterView, NSTextField)] = []
@@ -20,6 +23,7 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
                             styleMask: [.titled, .closable, .resizable, .utilityWindow],
                             backing: .buffered, defer: false)
         panel.title = "NeuroFly · 뇌 보기"
+        panel.minSize = NSSize(width: 382, height: 400)
         panel.appearance = NSAppearance(named: .darkAqua)
         panel.isReleasedWhenClosed = false
         panel.level = .floating
@@ -49,11 +53,11 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         sensorySwitch.state = snapshot.sensoryEnabled ? .on : .off
 
         let sensoryValues: [(Float, String)] = [
-            (snapshot.sensory.odorLeft, "냄새 · 왼쪽"),
-            (snapshot.sensory.odorRight, "냄새 · 오른쪽"),
+            (snapshot.sensory.odorLeft, "냄새 · 몸 왼쪽"),
+            (snapshot.sensory.odorRight, "냄새 · 몸 오른쪽"),
             (snapshot.sensory.taste, "단맛"),
-            (snapshot.sensory.loomingLeft, "그림자 · 왼쪽"),
-            (snapshot.sensory.loomingRight, "그림자 · 오른쪽"),
+            (snapshot.sensory.loomingLeft, "그림자 · 몸 왼쪽"),
+            (snapshot.sensory.loomingRight, "그림자 · 몸 오른쪽"),
             (snapshot.sensory.touch, "접촉")
         ]
         for (index, item) in sensoryValues.enumerated() where index < sensoryRows.count {
@@ -68,8 +72,8 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         }
 
         let neuralValues: [(Float, String)] = [
-            (snapshot.neural.turnLeftHz, "회전 · 왼쪽"),
-            (snapshot.neural.turnRightHz, "회전 · 오른쪽"),
+            (snapshot.neural.turnLeftHz, "회전 · 몸 왼쪽"),
+            (snapshot.neural.turnRightHz, "회전 · 몸 오른쪽"),
             (snapshot.neural.forwardHz, "전진"),
             (snapshot.neural.escapeHz, "회피"),
             (snapshot.neural.feedingHz, "섭식"),
@@ -81,6 +85,10 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
             neuralRows[index].0.value = CGFloat(max(0, min(1, item.0 / maxRate)))
             neuralRows[index].1.stringValue = String.neuroFlyRate(item.0)
         }
+
+        bodySpeedLabel.stringValue = String(format: "%.1f px/s", max(0, snapshot.fly.speed))
+        bodyTurnLabel.stringValue = bodyTurnDescription(snapshot.motor.turnRate)
+        bodyActivityLabel.stringValue = snapshot.motor.activity.label
     }
 
     private func buildView() {
@@ -131,6 +139,12 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
 
         statusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         detailLabel.font = .systemFont(ofSize: 10, weight: .regular)
+        detailLabel.usesSingleLineMode = false
+        detailLabel.maximumNumberOfLines = 0
+        detailLabel.lineBreakMode = .byWordWrapping
+        detailLabel.preferredMaxLayoutWidth = 310
+        detailLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         let statusCard = CardView(fill: NeuroFlyStyle.canvasRaised, border: NeuroFlyStyle.canvasLine, radius: 12)
         let statusStack = NSStackView(views: [statusLabel, detailLabel])
         statusStack.orientation = .vertical
@@ -162,8 +176,8 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         metaRow.addArrangedSubview(realtimeLabel)
         stack.addArrangedSubview(metaRow)
 
-        stack.addArrangedSubview(sectionTitle("감각 입력", detail: "월드에서 뇌로 들어가는 가상 수용기 신호"))
-        let sensory = ["냄새 · 왼쪽", "냄새 · 오른쪽", "단맛", "그림자 · 왼쪽", "그림자 · 오른쪽", "접촉"]
+        stack.addArrangedSubview(sectionTitle("감각 입력", detail: "더듬이에서 감지한 냄새 농도 · 뉴런 발화율과 다름 · 좌우는 화면이 아닌 펫 몸 기준"))
+        let sensory = ["냄새 · 몸 왼쪽", "냄새 · 몸 오른쪽", "단맛", "그림자 · 몸 왼쪽", "그림자 · 몸 오른쪽", "접촉"]
         for title in sensory {
             let meter = RateMeterView(tint: NeuroFlyStyle.orange)
             let value = NSTextField(labelWithString: "0.00")
@@ -188,8 +202,8 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         switchRow.addArrangedSubview(sensorySwitch)
         stack.addArrangedSubview(switchRow)
 
-        stack.addArrangedSubview(sectionTitle("후각 중계", detail: "냄새 신호의 중계와 화면 속 선회에 사용하는 출력"))
-        let relays = ["후각 중계 · 왼쪽", "후각 중계 · 오른쪽"]
+        stack.addArrangedSubview(sectionTitle("후각 중계 · DM1_lPN", detail: "DM1_lPN 뉴런의 계산된 발화율 · 화면 속 선회에 사용하는 신호 · 좌우는 펫 몸 기준"))
+        let relays = ["DM1_lPN · 몸 왼쪽", "DM1_lPN · 몸 오른쪽"]
         for title in relays {
             let meter = RateMeterView(tint: NeuroFlyStyle.cream)
             let value = NSTextField(labelWithString: "0.00 Hz")
@@ -197,14 +211,35 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
             relayRows.append((meter, value))
         }
 
-        stack.addArrangedSubview(sectionTitle("운동 출력", detail: "운동 관련 뉴런 집단의 발화율"))
-        let neural = ["회전 · 왼쪽", "회전 · 오른쪽", "전진", "회피", "섭식", "그루밍", "전체 뉴런"]
+        stack.addArrangedSubview(sectionTitle("운동 뉴런", detail: "운동 관련 뉴런 집단의 원시 발화율 · 몸체 반응과 별도"))
+        let neural = ["회전 · 몸 왼쪽", "회전 · 몸 오른쪽", "전진", "회피", "섭식", "그루밍", "전체 뉴런"]
         for title in neural {
             let meter = RateMeterView(tint: NeuroFlyStyle.mint)
             let value = NSTextField(labelWithString: "0.00 Hz")
             stack.addArrangedSubview(makeMeterRow(title: title, meter: meter, value: value))
             neuralRows.append((meter, value))
         }
+
+        stack.addArrangedSubview(sectionTitle("몸체 반응", detail: "실제 이동 속도 · 신경 출력으로 정한 선회 방향과 활동"))
+        let bodyCard = CardView(fill: NeuroFlyStyle.canvasRaised, border: NeuroFlyStyle.canvasLine, radius: 10)
+        let bodyStack = NSStackView(views: [
+            makeBodyValueRow(title: "속도", value: bodySpeedLabel),
+            makeBodyValueRow(title: "선회", value: bodyTurnLabel),
+            makeBodyValueRow(title: "활동", value: bodyActivityLabel)
+        ])
+        bodyStack.orientation = .vertical
+        bodyStack.alignment = .width
+        bodyStack.spacing = 5
+        bodyStack.edgeInsets = NSEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        bodyStack.translatesAutoresizingMaskIntoConstraints = false
+        bodyCard.addSubview(bodyStack)
+        NSLayoutConstraint.activate([
+            bodyStack.leadingAnchor.constraint(equalTo: bodyCard.leadingAnchor),
+            bodyStack.trailingAnchor.constraint(equalTo: bodyCard.trailingAnchor),
+            bodyStack.topAnchor.constraint(equalTo: bodyCard.topAnchor),
+            bodyStack.bottomAnchor.constraint(equalTo: bodyCard.bottomAnchor)
+        ])
+        stack.addArrangedSubview(bodyCard)
 
         let note = NSTextField(wrappingLabelWithString: "이 패널은 매 프레임 계산된 값을 보여줍니다. 감각 입력을 끄면 같은 자극에서 운동 출력이 어떻게 달라지는지 비교할 수 있습니다.")
         note.font = .systemFont(ofSize: 10, weight: .regular)
@@ -222,9 +257,12 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         let titleLabel = NSTextField(labelWithString: title)
         titleLabel.font = .systemFont(ofSize: 12, weight: .bold)
         titleLabel.textColor = NeuroFlyStyle.cream
-        let detailLabel = NSTextField(labelWithString: detail)
+        let detailLabel = NSTextField(wrappingLabelWithString: detail)
         detailLabel.font = .systemFont(ofSize: 10, weight: .regular)
         detailLabel.textColor = NeuroFlyStyle.dimInk
+        detailLabel.preferredMaxLayoutWidth = 330
+        detailLabel.maximumNumberOfLines = 0
+        detailLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         stack.addArrangedSubview(titleLabel)
         stack.addArrangedSubview(detailLabel)
         return stack
@@ -238,7 +276,7 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         let label = NSTextField(labelWithString: title)
         label.font = .systemFont(ofSize: 10, weight: .regular)
         label.textColor = NeuroFlyStyle.mutedInk
-        label.widthAnchor.constraint(equalToConstant: 92).isActive = true
+        label.widthAnchor.constraint(equalToConstant: 104).isActive = true
         row.addArrangedSubview(label)
         meter.translatesAutoresizingMaskIntoConstraints = false
         row.addArrangedSubview(meter)
@@ -252,6 +290,39 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         value.widthAnchor.constraint(equalToConstant: 55).isActive = true
         row.addArrangedSubview(value)
         return row
+    }
+
+    private func makeBodyValueRow(title: String, value: NSTextField) -> NSView {
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.alignment = .centerY
+        row.spacing = 8
+
+        let titleLabel = NSTextField(labelWithString: title)
+        titleLabel.font = .systemFont(ofSize: 10, weight: .regular)
+        titleLabel.textColor = NeuroFlyStyle.mutedInk
+        titleLabel.widthAnchor.constraint(equalToConstant: 104).isActive = true
+        row.addArrangedSubview(titleLabel)
+
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        row.addArrangedSubview(spacer)
+
+        value.font = .monospacedDigitSystemFont(ofSize: 10, weight: .medium)
+        value.textColor = NeuroFlyStyle.ink
+        value.alignment = .right
+        value.setContentCompressionResistancePriority(.required, for: .horizontal)
+        row.addArrangedSubview(value)
+        return row
+    }
+
+    private func bodyTurnDescription(_ turnRate: Double) -> String {
+        guard turnRate.isFinite else { return "—" }
+        let degreesPerSecond = turnRate * 180 / Double.pi
+        let magnitude = abs(degreesPerSecond)
+        guard magnitude >= 0.5 else { return "직진 · 0.0°/s" }
+        let direction = degreesPerSecond > 0 ? "왼쪽" : "오른쪽"
+        return String(format: "%@ · %.1f°/s", direction, magnitude)
     }
 
     @objc private func sensorySwitchChanged(_ sender: NSSwitch) {

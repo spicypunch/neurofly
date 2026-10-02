@@ -49,6 +49,16 @@ final class BrainEngineTests: XCTestCase {
         XCTAssertGreaterThan(odor.odorRelayRightHz, 0)
     }
 
+    func testWeakVisibleOdorReachesProjectionNeurons() throws {
+        let brain = try BrainEngine(dataDirectory: dataDirectory(), seed: 42)
+        let baseline = try response(brain, input: SensoryInput())
+        // Regress the desktop observation: the sensor meters read 0.12/0.15,
+        // while the old current encoding left both projection neurons silent.
+        let odor = try response(brain, input: SensoryInput(odorLeft: 0.12, odorRight: 0.15))
+        XCTAssertGreaterThan(odor.odorRelayLeftHz + odor.odorRelayRightHz,
+                             baseline.odorRelayLeftHz + baseline.odorRelayRightHz + 20)
+    }
+
     func testSensoryDisabledRemovesExternalOdorDrive() throws {
         let brain = try BrainEngine(dataDirectory: dataDirectory(), seed: 42)
         let baseline = try response(brain, input: SensoryInput())

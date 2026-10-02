@@ -6,9 +6,10 @@ import NeuroFlyCore
 struct NeuroFlyMain {
     @MainActor static func main() {
         let args = CommandLine.arguments
-        if args.contains("--probe") || args.contains("--benchmark") || args.contains("--experiment") {
+        if args.contains("--probe") || args.contains("--benchmark") || args.contains("--experiment") || args.contains("--foraging") {
             do {
-                if args.contains("--experiment") { try runWorldExperiment() }
+                if args.contains("--foraging") { try runForagingDiagnostics() }
+                else if args.contains("--experiment") { try runWorldExperiment() }
                 else { try runDiagnostics(benchmark: args.contains("--benchmark")) }
             }
             catch { fputs("NeuroFly: \(error.localizedDescription)\n", stderr); exit(1) }
@@ -78,7 +79,10 @@ struct NeuroFlyMain {
             var traces: [[String: Any]] = []
             var minDistance = world.snapshot.fly.position.distance(to: target)
             var tasteFrames = 0, feedingFrames = 0
-            for tick in 0..<360 {
+            // Use the same 30 s observation budget as --foraging. A return
+            // approach can make contact late in the old 12 s window; keep the
+            // actual contact/consumption gate rather than counting PN activity.
+            for tick in 0..<900 {
                 let milliseconds = tick % 3 == 2 ? 34 : 33
                 let input = world.sense()
                 let response = try brain.advance(milliseconds: milliseconds, input: input, sensoryEnabled: world.snapshot.sensoryEnabled)

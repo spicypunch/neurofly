@@ -10,43 +10,303 @@
   },
   "tests": {
     "configuration": "release",
-    "passed": 16,
+    "passed": 19,
     "failed": 0
   },
-  "benchmark": {
+  "historicalBenchmark": {
+    "sourceCommit": "0f191b983ddfe5fdd57ad0c58f6937291302145c",
     "simulatedSeconds": 10,
     "wallSeconds": 0.9653232083073817,
     "simulationToWallRatio": 10.359224676193389,
     "maximumResidentBytes": 245743616
   },
-  "foodTrials": {
-    "foodLeft": {
-      "minDistance": 33.39931165337874,
-      "tasteFrames": 150,
-      "feedingFrames": 155,
-      "consumedFraction": 0.31849999999999756
+  "foraging": {
+    "world": {
+      "height": 1400,
+      "initialFlyPosition": {
+        "x": 1024,
+        "y": 728
+      },
+      "initialFoodRemaining": 1,
+      "initialHeadingRadians": 0,
+      "width": 2560
     },
-    "foodCenter": {
-      "minDistance": 35.73512812004362,
-      "tasteFrames": 206,
-      "feedingFrames": 206,
-      "consumedFraction": 0.4159999999999968
+    "modelSeconds": 30,
+    "warmupSeconds": 0.5,
+    "distancesPixels": [
+      120,
+      220,
+      360
+    ],
+    "bearingsDegrees": [
+      0,
+      45,
+      -45,
+      90,
+      -90,
+      180
+    ],
+    "before": {
+      "sourceCommit": "0f191b983ddfe5fdd57ad0c58f6937291302145c",
+      "contacted": 4,
+      "total": 18
     },
-    "foodRight": {
-      "minDistance": 39.17062514714695,
-      "tasteFrames": 134,
-      "feedingFrames": 155,
-      "consumedFraction": 0.27949999999999786
+    "after": {
+      "contacted": 18,
+      "consumed": 18,
+      "total": 18,
+      "trials": [
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 6.233,
+          "minDistancePixels": 3.1328547697142826,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 2.933,
+          "minDistancePixels": 17.716813845149062,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 3.2,
+          "minDistancePixels": 23.892545137238244,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 9.1,
+          "minDistancePixels": 9.422705388730149,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 3.833,
+          "minDistancePixels": 23.084057637480683,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 4.633,
+          "minDistancePixels": 9.925662873549571,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 5.8,
+          "minDistancePixels": 14.089633691768617,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 5.5,
+          "minDistancePixels": 5.100218500085541,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 9.566,
+          "minDistancePixels": 12.015865161691373,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 6.4,
+          "minDistancePixels": 14.31164781318405,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 7.833,
+          "minDistancePixels": 7.735559940552285,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 9.466,
+          "minDistancePixels": 1.8023717313308767,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 12.1,
+          "minDistancePixels": 13.315756632780058,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 12.733,
+          "minDistancePixels": 24.794103834267446,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 17.066,
+          "minDistancePixels": 35.70461258563198,
+          "consumedFraction": 0.8211449999999965
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 13.333,
+          "minDistancePixels": 1.2991944543818377,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 19.4,
+          "minDistancePixels": 35.16606305470002,
+          "consumedFraction": 0.6716449999999963
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 16.233,
+          "minDistancePixels": 31.287744005095202,
+          "consumedFraction": 0.8581949999999966
+        }
+      ]
+    },
+    "blockedControlsMatchNoFood": true,
+    "blockedControlCount": 3,
+    "afterLongerNeuralWarmup": {
+      "warmupSeconds": 10,
+      "contacted": 18,
+      "consumed": 18,
+      "total": 18,
+      "blockedControlsMatchNoFood": true,
+      "trials": [
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 2.2,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 2.666,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 9.2,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 3.233,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 3.933,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 120,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 5.733,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 6.1,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 9.233,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 6.1,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 7,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 6.833,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 220,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 13.9,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 0,
+          "contactTimeSeconds": 24,
+          "consumedFraction": 0.370369999999997
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 45,
+          "contactTimeSeconds": 16.6,
+          "consumedFraction": 0.8557899999999965
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": -45,
+          "contactTimeSeconds": 11.9,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 90,
+          "contactTimeSeconds": 25.266,
+          "consumedFraction": 0.3077099999999977
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": -90,
+          "contactTimeSeconds": 13.2,
+          "consumedFraction": 1
+        },
+        {
+          "distancePixels": 360,
+          "bearingDegrees": 180,
+          "contactTimeSeconds": 24.3,
+          "consumedFraction": 0.36191999999999735
+        }
+      ]
     }
   },
-  "sensoryGate": {
-    "trajectoryMatchesNoFood": true,
-    "neuralOutputsMatchNoFood": true,
-    "foodConsumed": false
-  },
   "limitations": [
-    "Fixed seed and three food placements only",
-    "Headless timing excludes GUI and startup",
-    "Brain model and 2D decoder are engineering approximations"
+    "Fixed seed 42, six bearings and three distances; arbitrary desktop placement is not guaranteed",
+    "Historical headless benchmark predates this foraging repair and excludes GUI and startup",
+    "Sensory contrast encoding, neural output lookup, and body search are engineered adapters, not validated biological food-seeking behavior"
   ]
 }

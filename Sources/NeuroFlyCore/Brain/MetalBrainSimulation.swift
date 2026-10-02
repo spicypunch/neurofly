@@ -597,8 +597,16 @@ final class MetalBrainSimulation {
         }
         // Gains are explicit model parameters. They make a 0...1 receptor level
         // readable by the LIF threshold; they are not claims about in-vivo units.
-        return [clean(input.odorLeft) * 0.22,
-                clean(input.odorRight) * 0.22,
+        // Engineered virtual-sensor adapter: recruit ORNs for weak odors, and
+        // amplify bilateral contrast before it is lost in the two PN readouts'
+        // strong common response. This is not a biological receptor model.
+        // Only ORNs get this drive; PNs receive propagated graph spikes only.
+        let odorLeft = clean(input.odorLeft), odorRight = clean(input.odorRight)
+        let odorSum = odorLeft + odorRight
+        let common = sqrt(odorSum * 0.5) * 0.22
+        let contrast = max(-0.95, min(0.95, 10 * (odorLeft - odorRight) / max(0.02, odorSum)))
+        return [min(0.22, common * (1 + contrast)),
+                min(0.22, common * (1 - contrast)),
                 clean(input.taste) * 0.30,
                 clean(input.loomingLeft) * 0.34,
                 clean(input.loomingRight) * 0.34,

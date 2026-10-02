@@ -91,6 +91,7 @@ public struct WorldSnapshot: Codable, Sendable {
     public var shadowStrength: Double = 0
     public var sensory = SensoryInput()
     public var neural = NeuralReadout()
+    public var motor = MotorCommand()
     public var elapsed: Double = 0
     public var isPaused = false
     public var sensoryEnabled = true

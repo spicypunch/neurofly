@@ -91,4 +91,43 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(world.snapshot.foods.count, 0)
         XCTAssertTrue(world.snapshot.width.isFinite)
     }
+
+    func testFallingRelayActivityStartsBoundedSearchAndCalibrationClearsIt() {
+        let calibration = BrainCalibration(odorBalance: [.init(totalHz: 200, leftFraction: 0.5)])
+        var decoder = MotorDecoder()
+        decoder.calibrate(calibration)
+        let strong = NeuralReadout(forwardHz: 20, odorRelayLeftHz: 200, odorRelayRightHz: 200)
+        let weaker = NeuralReadout(forwardHz: 20, odorRelayLeftHz: 70, odorRelayRightHz: 70)
+        for _ in 0..<90 { _ = decoder.decode(strong, dt: 1.0 / 30) }
+        var search = MotorCommand()
+        for _ in 0..<15 { search = decoder.decode(weaker, dt: 1.0 / 30) }
+        XCTAssertEqual(search.activity, .flying)
+        XCTAssertGreaterThan(search.speed, 0)
+        XCTAssertGreaterThan(abs(search.turnRate), 0.5)
+        XCTAssertLessThanOrEqual(abs(search.turnRate), 2.8)
+
+        decoder.calibrate(calibration)
+        var fresh = MotorDecoder()
+        fresh.calibrate(calibration)
+        for _ in 0..<60 {
+            XCTAssertEqual(decoder.decode(weaker, dt: 1.0 / 30), fresh.decode(weaker, dt: 1.0 / 30))
+        }
+    }
+
+    func testFeedingInterruptsSearchAndZeroNeuralInputCannotDriveSearch() {
+        let calibration = BrainCalibration(odorBalance: [.init(totalHz: 200, leftFraction: 0.5)])
+        var decoder = MotorDecoder()
+        decoder.calibrate(calibration)
+        for _ in 0..<90 {
+            _ = decoder.decode(NeuralReadout(forwardHz: 20, odorRelayLeftHz: 200, odorRelayRightHz: 200), dt: 1.0 / 30)
+        }
+        for _ in 0..<15 {
+            _ = decoder.decode(NeuralReadout(forwardHz: 20, odorRelayLeftHz: 70, odorRelayRightHz: 70), dt: 1.0 / 30)
+        }
+        let feeding = decoder.decode(NeuralReadout(forwardHz: 20, feedingHz: 50,
+            odorRelayLeftHz: 70, odorRelayRightHz: 70), dt: 1.0 / 30)
+        XCTAssertEqual(feeding, MotorCommand(activity: .feeding))
+        decoder.calibrate(calibration)
+        for _ in 0..<300 { XCTAssertEqual(decoder.decode(NeuralReadout(), dt: 1.0 / 30), MotorCommand()) }
+    }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-public struct MotorCommand: Equatable, Sendable {
+public struct MotorCommand: Codable, Equatable, Sendable {
     public var speed: Double
     public var turnRate: Double
     public var activity: FlyActivity
@@ -17,44 +17,93 @@ public struct MotorDecoder: Sendable {
     private var filteredTurn: Double = 0
     private var filteredOdorLeft: Double = 0
     private var filteredOdorRight: Double = 0
+    private var odorTrendReference: Double = 0
+    private var odorObservationTime: Double = 0
+    private var searchRemaining: Double = 0
+    private var searchDirection: Double = 1
+    private var searchCooldown: Double = 0
+    private var relayWasActive = false
     public init() {}
     public mutating func calibrate(_ baseline: NeuralReadout) {
         self.baseline = baseline
+        self.calibration = BrainCalibration(baseline: baseline)
         filteredTurn = 0
+        filteredOdorLeft = 0; filteredOdorRight = 0
+        odorTrendReference = 0; odorObservationTime = 0
+        searchRemaining = 0; searchDirection = 1; searchCooldown = 0
+        relayWasActive = false
     }
 
     public mutating func calibrate(_ calibration: BrainCalibration) {
-        self.calibration = calibration
         calibrate(calibration.baseline)
-        filteredOdorLeft = 0; filteredOdorRight = 0
+        self.calibration = calibration
     }
 
     public mutating func decode(_ neural: NeuralReadout, dt: Double) -> MotorCommand {
         let left = Double(neural.turnLeftHz)
         let right = Double(neural.turnRightHz)
         let bias = Double(baseline.turnLeftHz - baseline.turnRightHz)
-        let odorBlend = 1 - exp(-max(0, dt) / 0.5)
+        let rawActive = neural.odorRelayLeftHz + neural.odorRelayRightHz > 30
+        if rawActive && !relayWasActive {
+            filteredOdorLeft = Double(neural.odorRelayLeftHz)
+            filteredOdorRight = Double(neural.odorRelayRightHz)
+        }
+        relayWasActive = rawActive
+        let odorBlend = 1 - exp(-max(0, dt) / 0.2)
         filteredOdorLeft += (Double(neural.odorRelayLeftHz) - filteredOdorLeft) * odorBlend
         filteredOdorRight += (Double(neural.odorRelayRightHz) - filteredOdorRight) * odorBlend
         let odorTotal = filteredOdorLeft + filteredOdorRight
-        let odorActive = odorTotal > 30 && !calibration.odorBalance.isEmpty
+        let odorActive = odorTotal > 30 && (!calibration.odorBalance.isEmpty || !calibration.odorResponses.isEmpty)
         let expectedLeft = calibration.balancedLeftFraction(total: odorTotal)
-        let contrast = odorTotal > 0 ? filteredOdorLeft / odorTotal - expectedLeft : 0
+        let rawContrast = odorTotal > 0 ? filteredOdorLeft / odorTotal - expectedLeft : 0
+        let contrast = rawContrast.sign == .minus ? min(0, rawContrast + 0.006) : max(0, rawContrast - 0.006)
+        let direction = calibration.odorResponses.isEmpty ? contrast * 20 :
+            calibration.estimateDirection(leftHz: filteredOdorLeft, rightHz: filteredOdorRight)
+        let escape = neural.escapeHz > max(8, baseline.escapeHz + 10)
+        let feeding = neural.feedingHz > max(25, baseline.feedingHz + 20)
+        let grooming = neural.groomingHz > max(10, baseline.groomingHz + 15)
+        if escape || feeding || grooming {
+            // Contact/escape interrupts a search instead of letting an unseen
+            // search timer run underneath it and leak into the next flight.
+            searchRemaining = 0; searchCooldown = 1.2
+            odorTrendReference = odorTotal
+            filteredTurn = 0
+            if escape {
+                return MotorCommand(speed: min(260, 120 + Double(neural.escapeHz) * 1.5),
+                    turnRate: max(-2.8, min(2.8, (left - right - bias) * 0.055)), activity: .escaping)
+            }
+            return MotorCommand(activity: feeding ? .feeding : .grooming)
+        }
+        let trendBlend = 1 - exp(-max(0, dt) / 1.5)
+        odorTrendReference += (odorTotal - odorTrendReference) * trendBlend
+        odorObservationTime = odorActive ? odorObservationTime + dt : 0
+        searchCooldown = max(0, searchCooldown - dt)
+        let trend = (odorTotal - odorTrendReference) / max(30, odorTrendReference)
+        // A bilateral sample cannot distinguish straight ahead from directly
+        // behind. If measured relay activity falls while moving, turn briefly
+        // to sample again. This is a body adapter using neural history only;
+        // there is no food position, sensed concentration, or target bearing.
+        if odorActive && odorObservationTime > 1.5 && trend < -0.035 &&
+            searchRemaining <= 0 && searchCooldown <= 0 {
+            searchRemaining = 1.8
+            searchDirection = direction >= 0 ? 1 : -1
+        }
+        let searching = searchRemaining > 0
+        if searching {
+            searchRemaining = max(0, searchRemaining - dt)
+            if searchRemaining <= 0 { searchCooldown = 1.2 }
+        }
         // Measured PN contrast steers the simplified body after bilateral bias
         // correction. This is an engineered decoder, not a claim about flight DNs.
-        let turn = odorActive ? contrast * 55 : (left - right - bias) * 0.055
+        let odorTurn = abs(direction) > 0.15 ? direction * 2.3 : (left - right - bias) * 0.015
+        let turn = searching ? searchDirection * 1.8 :
+            (odorActive ? (odorObservationTime > 0.3 ? odorTurn : 0) : (left - right - bias) * 0.055)
         let targetTurn = max(-2.8, min(2.8, turn))
         let blend = 1 - exp(-max(0, dt) / 0.12)
         filteredTurn += (targetTurn - filteredTurn) * blend
 
         let forward = max(0, Double(neural.forwardHz))
-        let speed = min(120, forward * 3.2) * (odorActive ? 0.45 : 1)
-        let escape = neural.escapeHz > max(8, baseline.escapeHz + 10)
-        let feeding = neural.feedingHz > max(25, baseline.feedingHz + 20)
-        let grooming = neural.groomingHz > max(10, baseline.groomingHz + 15)
-        if escape { return MotorCommand(speed: min(260, 120 + Double(neural.escapeHz) * 1.5), turnRate: filteredTurn, activity: .escaping) }
-        if feeding { return MotorCommand(speed: 0, turnRate: 0, activity: .feeding) }
-        if grooming { return MotorCommand(speed: 0, turnRate: 0, activity: .grooming) }
+        let speed = min(120, forward * 3.2) * (searching ? 0.25 : odorActive ? 0.85 - 0.5 * min(1, abs(direction)) : 1)
         return MotorCommand(speed: speed, turnRate: filteredTurn, activity: speed > 2 ? .flying : .resting)
     }
 }
@@ -118,7 +167,7 @@ public struct SimulationWorld: Sendable {
         var input = SensoryInput()
         // A virtual fruit emits an isotropic Gaussian odor field. It is not a food target vector.
         for food in snapshot.foods where food.remaining > 0 {
-            let radius = 110.0
+            let radius = 180.0
             func concentration(_ p: Point2) -> Float {
                 let d = p.distance(to: food.position)
                 return Float(food.remaining * exp(-(d * d) / (2 * radius * radius)))
@@ -148,6 +197,7 @@ public struct SimulationWorld: Sendable {
         let step = min(dt, 0.1)
         snapshot.neural = neural; snapshot.sensory = input
         let motor = decoder.decode(neural, dt: step)
+        snapshot.motor = motor
         advanceBody(motor: motor, dt: step)
         snapshot.elapsed += step
         touchRemaining = max(0, touchRemaining - step)
