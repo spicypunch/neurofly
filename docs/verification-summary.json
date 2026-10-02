@@ -1,0 +1,52 @@
+{
+  "recordedDateKST": "2026-10-02",
+  "device": "Apple M1 Pro",
+  "seed": 42,
+  "graph": {
+    "neurons": 139255,
+    "directedEdges": 15091983,
+    "aggregatedSynapses": 54492922,
+    "materialization": "FlyWire FAFB v783"
+  },
+  "tests": {
+    "configuration": "release",
+    "passed": 16,
+    "failed": 0
+  },
+  "benchmark": {
+    "simulatedSeconds": 10,
+    "wallSeconds": 0.9653232083073817,
+    "simulationToWallRatio": 10.359224676193389,
+    "maximumResidentBytes": 245743616
+  },
+  "foodTrials": {
+    "foodLeft": {
+      "minDistance": 33.39931165337874,
+      "tasteFrames": 150,
+      "feedingFrames": 155,
+      "consumedFraction": 0.31849999999999756
+    },
+    "foodCenter": {
+      "minDistance": 35.73512812004362,
+      "tasteFrames": 206,
+      "feedingFrames": 206,
+      "consumedFraction": 0.4159999999999968
+    },
+    "foodRight": {
+      "minDistance": 39.17062514714695,
+      "tasteFrames": 134,
+      "feedingFrames": 155,
+      "consumedFraction": 0.27949999999999786
+    }
+  },
+  "sensoryGate": {
+    "trajectoryMatchesNoFood": true,
+    "neuralOutputsMatchNoFood": true,
+    "foodConsumed": false
+  },
+  "limitations": [
+    "Fixed seed and three food placements only",
+    "Headless timing excludes GUI and startup",
+    "Brain model and 2D decoder are engineering approximations"
+  ]
+}
