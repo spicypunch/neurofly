@@ -7,7 +7,8 @@ public struct Point2: Codable, Equatable, Sendable {
     public func distance(to other: Point2) -> Double { hypot(x - other.x, y - other.y) }
 }
 
-/// Virtual receptor signals. Only this value crosses from the world into the brain.
+/// Raw virtual receptor signals. Body-state food drive is passed separately;
+/// neither input carries object coordinates into the brain.
 public struct SensoryInput: Codable, Equatable, Sendable {
     public var odorLeft: Float = 0
     public var odorRight: Float = 0
@@ -92,6 +93,7 @@ public struct WorldSnapshot: Codable, Sendable {
     public var sensory = SensoryInput()
     public var neural = NeuralReadout()
     public var motor = MotorCommand()
+    public var body = BodyState()
     public var elapsed: Double = 0
     public var isPaused = false
     public var sensoryEnabled = true

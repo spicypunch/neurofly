@@ -189,6 +189,7 @@ private struct ForagingTracePoint: Codable {
     let turnRadiansPerSecond: Double
     let feedingHz: Float
     let escapeHz: Float
+    let body: BodyState
 }
 
 private struct ForagingTrialReport: Codable {
@@ -227,6 +228,7 @@ private struct ForagingReport: Codable {
 private struct ForagingControlSample: Equatable {
     let fly: FlyState
     let neural: NeuralReadout
+    let body: BodyState
 }
 
 private struct ForagingTrialExecution {
@@ -270,6 +272,9 @@ private struct ForagingDigest {
         append(sample.neural.odorRelayLeftHz)
         append(sample.neural.odorRelayRightHz)
         append(sample.neural.populationHz)
+        append(sample.body.hunger)
+        append(sample.body.foodDrive)
+        append(sample.body.consumedFood)
     }
 
     var hex: String {
@@ -438,7 +443,7 @@ extension NeuroFlyMain {
             speedPixelsPerSecond: world.snapshot.fly.speed,
             activity: world.snapshot.fly.activity, odorLeft: 0, odorRight: 0,
             taste: 0, pnTotalHz: 0, pnLeftHz: 0, pnRightHz: 0,
-            turnRadiansPerSecond: 0, feedingHz: 0, escapeHz: 0)]
+            turnRadiansPerSecond: 0, feedingHz: 0, escapeHz: 0, body: world.snapshot.body)]
         var controlSamples: [ForagingControlSample] = []
         var pnCount = 0
         var pnActiveCount = 0
@@ -455,7 +460,8 @@ extension NeuroFlyMain {
             let input = world.sense()
             let response = try brain.advance(milliseconds: milliseconds,
                                               input: input,
-                                              sensoryEnabled: world.snapshot.sensoryEnabled)
+                                              sensoryEnabled: world.snapshot.sensoryEnabled,
+                                              foodDrive: world.snapshot.body.foodDrive)
             world.advance(neural: response, input: input,
                           dt: Double(milliseconds) / 1000)
 
@@ -505,10 +511,12 @@ extension NeuroFlyMain {
                     taste: input.taste, pnTotalHz: Float(pnTotal),
                     pnLeftHz: response.odorRelayLeftHz, pnRightHz: response.odorRelayRightHz,
                     turnRadiansPerSecond: world.snapshot.motor.turnRate,
-                    feedingHz: response.feedingHz, escapeHz: response.escapeHz))
+                    feedingHz: response.feedingHz, escapeHz: response.escapeHz,
+                    body: world.snapshot.body))
             }
             controlSamples.append(ForagingControlSample(
-                fly: world.snapshot.fly, neural: response.foragingControlValue))
+                fly: world.snapshot.fly, neural: response.foragingControlValue,
+                body: world.snapshot.body))
         }
 
         let firstSummary = makeFirstWindowSummary(

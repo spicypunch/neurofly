@@ -67,6 +67,19 @@ def verify(
     assert isinstance(no_food_digest, str) and no_food_digest, "noFood digest is missing"
     assert no_food.get("category") == "noFood"
 
+    # Older reports predate BodyState. New reports must account for appetite
+    # and actual intake without changing the existing contact/consumption gate.
+    for trial in [no_food, *blocked, *food_trials]:
+        trace = trial.get("trace", [])
+        if trace and "body" in trace[0]:
+            for point in trace:
+                body = point["body"]
+                assert 0 <= finite(body["hunger"], "body.hunger") <= 1
+                assert isinstance(body["isFoodMotivated"], bool)
+                assert finite(body["consumedFood"], "body.consumedFood") >= 0
+            assert math.isclose(trace[-1]["body"]["consumedFood"],
+                                trial["consumedFraction"], abs_tol=1e-6), "intake differs from consumed food"
+
     for trial in blocked:
         assert trial.get("category") == "blocked", f"unexpected blocked category: {trial.get('category')}"
         assert trial.get("sensoryEnabled") is False, f"{trial.get('id')}: sensory gate is enabled"

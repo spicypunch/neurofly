@@ -13,7 +13,7 @@ python3 scripts/fetch-data.py
 swift test -c release
 ```
 
-**19 tests, 0 failures** — BrainEngine 8개, World 11개.
+**29 tests, 0 failures** — BodyState 6개, BrainEngine 10개, World 13개.
 
 - 고정된 실제 연결 데이터의 뉴런 수·edge 수·입출력 매핑
 - 같은 seed로 초기화했을 때 동일한 신경 출력
@@ -26,52 +26,70 @@ swift test -c release
 - 약한 0.12 / 0.15 냄새가 projection 뉴런까지 도달하는지 확인
 - PN 활동 감소가 bounded search를 시작하고 보정 재초기화가 history를 지우는지 확인
 - 섭식이 search를 중단하고, 무신경 입력이 search를 계속시키지 않는지 확인
+- 속도에 따른 허기 증가, 실제 섭취량 accounting, 0.20 / 0.60 motivation hysteresis
+- pause / reset에서 허기와 누적 섭취 상태가 올바르게 유지·초기화되는지 확인
 
-## 넓은 먹이 탐색과 감각 차단 실험
+## 허기 cycle
 
 ```sh
 mkdir -p artifacts
-swift run -c release NeuroFly --foraging > artifacts/foraging.json
-python3 scripts/verify-foraging.py artifacts/foraging.json --require-full-grid --require-contact
-
-# 같은 초기 몸체 위치에서 뇌만 무입력으로 10초 먼저 실행
-swift run -c release NeuroFly --foraging --foraging-warmup-seconds 10 > artifacts/foraging-warm.json
-python3 scripts/verify-foraging.py artifacts/foraging-warm.json --require-full-grid --require-contact
+swift run -c release NeuroFly --hunger > artifacts/hunger.json
+python3 scripts/verify-hunger.py artifacts/hunger.json
 ```
 
-기록 파일은 `artifacts/foraging-lookup.json`과 `artifacts/foraging-warm.json`입니다.
-두 run 모두 seed 42, 2,560 × 1,400 가상 공간, 조건별 30초의 뇌 시간을 사용했습니다.
-먹이 조건은 거리 120 / 220 / 360 픽셀과 방위 0 / ±45 / ±90 / 180도로 구성한
-3 × 6, 총 18개입니다. 냄새는 Gaussian field(σ=180)로 만들며, 먹이 좌표나 목적지는
-감각 입력 경계를 넘어 디코더나 뇌에 전달하지 않습니다.
+확정 기록은 `artifacts/hunger-cycle.json`입니다. seed 42, 2,560 × 1,400 공간,
+초기 hunger 0.65에서 첫 먹이를 먹고 포만 상태에 들어간 뒤, 음식을 치우고 자연 회복한
+다음 두 번째 먹이를 배치하는 214.366초 cycle입니다.
 
-| 먹이 거리 · 기본 run | 조건 수 | 접촉 | 소비량 감소 | 접촉 시간 | 소비 비율 |
-| :--- | ---: | ---: | ---: | ---: | ---: |
-| 120 px | 6 | 6 / 6 | 6 / 6 | 2.933–9.1초 | 100% |
-| 220 px | 6 | 6 / 6 | 6 / 6 | 5.5–9.566초 | 100% |
-| 360 px | 6 | 6 / 6 | 6 / 6 | 12.1–19.4초 | 67.2–100% |
+| 단계 | 기록 |
+| :--- | :--- |
+| 첫 먹이 포만 전환 | 12.466초 · hunger 0.19983 · 0.396435개 섭취 · 남은 음식 0.603565 |
+| 포만 5초 후 정리 | 17.466초 · 남은 음식 0.5905 · 첫 먹이 누적 섭취 0.4095개 |
+| 자연 회복 후 재배치 | 200.566초 · hunger 0.60004 · 회복 183.1초 · 새 먹이는 월드 중심 방향 120px에 배치 |
+| 두 번째 먹이 포만 전환 | 214.366초 · 0.3575개 섭취 · 누적 0.767개 · final hunger 0.19954 |
+| PN 반응 | 허기 상태 최대 875.08 Hz · 포만 2초 후 약 0.000037 Hz |
 
-기본 run은 **18 / 18 접촉**, **18 / 18 소비량 감소**, **15 / 18 전량 소비**였습니다.
-추가 무입력 뇌 warmup run은 같은 초기 몸체 위치에서 뇌만 10초 먼저 실행한 뒤
-**18 / 18 접촉**, **18 / 18 소비량 감소**를 확인했고, 접촉 시간은 2.2–25.266초였습니다.
-두 run을 합쳐 고정 seed에서 36개 먹이 조건(18개 × 2)이 gate를 통과했습니다.
+허기는 `BodyState`의 공학적 game mechanic입니다. 모델 시간 1초마다
+`0.002 + 0.0005 × min(1, speed / 120)`만큼 증가하고, 실제 섭취량의 1.2배만큼 감소합니다.
+hunger가 0.20 이하이면 food drive를 끄고, 0.60 이상이면 다시 켜며 중간 구간은 이전 상태를 유지합니다.
+`foodDrive`는 ORN·단맛 외부 입력만 조절하고 그림자·접촉에는 영향을 주지 않습니다.
+음식을 치운 뒤 body 상태가 변하지 않았고, 뇌에는 먹이 좌표를 전달하지 않았습니다.
+이는 생물학적 hunger circuit, 대사, food-seeking 행동의 재현이 아닙니다.
 
-접촉 판정은 몸체 중심이 아닌 입 위치에서 계산합니다.
-소비량 감소는 섭식 상태에 들어가 실제 음식량이 줄었다는 뜻이며, 먼 거리 조건의 일부는
-30초 안에 전량 소비하지 않았습니다. 섭식 뉴런 발화만으로 성공을 판정하지 않고,
-검증 스크립트가 접촉 시각과 남은 음식량을 함께 확인합니다.
+## 먹이 탐색 grid
 
-각 run의 감각 차단 먹이 대조 3개는 음식이 없는 조건과 **신경 출력 및 몸체 궤적이 정확히 같고**,
-음식도 소비하지 않았습니다. 시간 측정값은 이 동일성 비교에서 제외했습니다.
+### 허기 도입 전 historical
 
-기존 3배치·짧은 world loop만으로는 탐색 범위를 설명하기 어려워, 현재 기록은 이 18개 grid를
-기본 gate로 사용합니다. 이 결과는 입력→신경 계산→몸체→다음 입력의 연결과 고정 grid에서의
-접촉·소비를 확인합니다. 모든 배치나 seed에서의 성공, 최단 경로, 실제 초파리의 food-seeking
-행동을 입증하지는 않습니다. 초기 선회에는 편향이 남아 있습니다.
+`artifacts/foraging-lookup.json`과 `artifacts/foraging-warm.json`은 BodyState를 넣기 전 기록입니다.
+seed 42, 2,560 × 1,400 공간에서 거리 120 / 220 / 360 × 방위 0 / ±45 / ±90 / 180,
+총 18개를 두 번 실행해 36조건을 확인했습니다.
 
-기존 `--experiment`의 정면 140px 배치에서는 돌아서 접근하면서 12초에 가까워서야
-섭식을 시작하는 경우가 있었습니다. 접촉·소비 판정은 유지하고, 이 진단의 관찰 시간도
-`--foraging`과 같은 30초로 통일했습니다. 즉시 직선으로 도착하는 동작은 보장하지 않습니다.
+- 기본 run: 18 / 18 접촉·섭취, 15 / 18 전량 소비, 접촉 2.933–19.4초
+- 뇌 무입력 10초 warmup run: 같은 초기 몸체 위치에서 18 / 18 접촉·섭취, 접촉 2.2–25.266초
+- 각 run 감각 차단 대조 3개: no-food 신경 출력·몸체 궤적과 정확히 일치
+
+이 수치는 현재 포만 동작이 추가되기 전의 historical 결과입니다. 현재 최종 탐색 성능의 수치로
+해석하지 않습니다.
+
+### 현재 허기 반영 run
+
+확정 기록은 `artifacts/foraging-hunger.json`입니다. 같은 seed 42, 2,560 × 1,400 공간,
+거리 120 / 220 / 360 × 방위 0 / ±45 / ±90 / 180의 18조건을 30초씩 실행했습니다.
+
+- 18 / 18 조건에서 접촉
+- 18 / 18 조건에서 먹이 일부 섭취(남은 양 감소)
+- 접촉 시간 2.633–27.333초
+- 섭취량 비율 0.1755–0.427; 포만 상태에 들어간 뒤에는 일부 먹이가 남을 수 있음
+- 감각 차단 대조 3개는 no-food와 body·neural trajectory digest가 모두 정확히 일치
+
+검증 명령은 다음과 같습니다.
+
+```sh
+swift run -c release NeuroFly --foraging > artifacts/foraging-hunger.json
+python3 scripts/verify-foraging.py artifacts/foraging-hunger.json --require-full-grid --require-contact
+```
+
+접촉은 몸체 중심이 아닌 입 위치에서 계산하며, 모든 seed·배치에서 최단 경로나 안정적인 탐색을 보장하지 않습니다.
 
 ## 입력 adapter와 방향 lookup
 
@@ -86,7 +104,8 @@ python3 scripts/verify-foraging.py artifacts/foraging-warm.json --require-full-g
 `MotorDecoder`는 food coordinate나 raw sensory input을 받지 않습니다.
 
 상태 창은 감각 입력, DM1_lPN 후각 중계, 운동 뉴런 원시 발화율, 디코더가 적용한 실제 몸체
-출력을 별도로 표시합니다. 뇌 공간의 기억 상태, 배고픔, 학습은 현재 구현하지 않았습니다.
+출력, 허기·먹이 반응·누적 섭취를 별도로 표시합니다. 허기는 몸 상태에만 있는 공학적
+조절이며, 뇌 공간의 biological hunger circuit, 기억 상태, 학습은 현재 구현하지 않았습니다.
 
 ## 계산 성능
 
@@ -101,8 +120,8 @@ swift run -c release NeuroFly --benchmark
 | 뇌 시간 / 실제 시간 | 10.36배 |
 | 프로세스 최대 resident memory | 245,743,616 bytes · 약 234 MiB |
 
-위 값은 기존 `--benchmark`에서 기록한 이전 headless 측정이며, 계산 시간은 그래프 초기화를 제외합니다.
-후각 adapter 변경 후의 최종 GUI·runtime 성능과 동일한 값으로 표시하지 않습니다.
+위 값은 허기 도입 전 `--benchmark`에서 기록한 이전 headless 측정이며, 계산 시간은 그래프 초기화를 제외합니다.
+현재 최종 GUI·runtime 성능과 동일한 값으로 표시하지 않습니다.
 메모리는 `/usr/bin/time -l`로 프로세스 전체에서 측정했습니다.
 GUI 렌더링, 다른 하드웨어, 배터리와 장시간 발열은 이 수치에 포함되지 않습니다.
 

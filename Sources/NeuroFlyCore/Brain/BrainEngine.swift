@@ -33,12 +33,15 @@ public final class BrainEngine {
     /// Advances the connectome by a fixed number of one-millisecond steps.
     /// `sensoryEnabled` gates the six receptor drives; spontaneous/background
     /// network activity remains governed by the explicit model baseline/noise.
+    /// `foodDrive` is an engineered body-state gain on odor and taste only.
+    /// Raw sensory values and threat pathways are not changed by satiety.
     public func advance(milliseconds: Int,
                          input: SensoryInput,
-                         sensoryEnabled: Bool = true) throws -> NeuralReadout {
+                         sensoryEnabled: Bool = true,
+                         foodDrive: Float = 1) throws -> NeuralReadout {
         try sync {
             try state.advance(milliseconds: milliseconds, input: input,
-                              sensoryEnabled: sensoryEnabled)
+                              sensoryEnabled: sensoryEnabled, foodDrive: foodDrive)
         }
     }
 

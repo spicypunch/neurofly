@@ -12,6 +12,10 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
     private let bodySpeedLabel = NSTextField(labelWithString: "—")
     private let bodyTurnLabel = NSTextField(labelWithString: "—")
     private let bodyActivityLabel = NSTextField(labelWithString: "—")
+    private let hungerMeter = RateMeterView(tint: NeuroFlyStyle.orange)
+    private let hungerValueLabel = NSTextField(labelWithString: "—")
+    private let foodReactionLabel = NSTextField(labelWithString: "—")
+    private let consumedFoodLabel = NSTextField(labelWithString: "—")
     private let sensorySwitch = NSSwitch()
     private var sensoryRows: [(RateMeterView, NSTextField)] = []
     private var relayRows: [(RateMeterView, NSTextField)] = []
@@ -89,6 +93,17 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         bodySpeedLabel.stringValue = String(format: "%.1f px/s", max(0, snapshot.fly.speed))
         bodyTurnLabel.stringValue = bodyTurnDescription(snapshot.motor.turnRate)
         bodyActivityLabel.stringValue = snapshot.motor.activity.label
+
+        let hunger = snapshot.body.hunger.isFinite ? max(0, min(1, snapshot.body.hunger)) : 0
+        let consumedFood = snapshot.body.consumedFood.isFinite
+            ? max(0, snapshot.body.consumedFood)
+            : 0
+        hungerMeter.value = CGFloat(hunger)
+        hungerValueLabel.stringValue = String(format: "%.0f%%", hunger * 100)
+        foodReactionLabel.stringValue = !snapshot.sensoryEnabled ? "감각 연결 꺼짐" :
+            (snapshot.body.isFoodMotivated ? "먹이 찾기" : "포만 · 잠시 멈춤")
+        foodReactionLabel.textColor = snapshot.body.isFoodMotivated ? NeuroFlyStyle.orange : NeuroFlyStyle.ink
+        consumedFoodLabel.stringValue = String(format: "%.2f개", consumedFood)
     }
 
     private func buildView() {
@@ -175,6 +190,32 @@ final class BrainInspectorController: NSWindowController, NSWindowDelegate {
         realtimeLabel.textColor = NeuroFlyStyle.mint
         metaRow.addArrangedSubview(realtimeLabel)
         stack.addArrangedSubview(metaRow)
+
+        stack.addArrangedSubview(sectionTitle("몸 상태", detail: "시간이 흐르면 늘고, 먹은 양만큼 줄어드는 가상 허기"))
+        let bodyStatusCard = CardView(fill: NeuroFlyStyle.canvasRaised, border: NeuroFlyStyle.canvasLine, radius: 10)
+        let bodyStatusStack = NSStackView(views: [
+            makeMeterRow(title: "허기", meter: hungerMeter, value: hungerValueLabel),
+            makeBodyValueRow(title: "먹이 반응", value: foodReactionLabel),
+            makeBodyValueRow(title: "누적 섭취", value: consumedFoodLabel)
+        ])
+        bodyStatusStack.orientation = .vertical
+        bodyStatusStack.alignment = .width
+        bodyStatusStack.spacing = 5
+        bodyStatusStack.edgeInsets = NSEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        bodyStatusStack.translatesAutoresizingMaskIntoConstraints = false
+        bodyStatusCard.addSubview(bodyStatusStack)
+        NSLayoutConstraint.activate([
+            bodyStatusStack.leadingAnchor.constraint(equalTo: bodyStatusCard.leadingAnchor),
+            bodyStatusStack.trailingAnchor.constraint(equalTo: bodyStatusCard.trailingAnchor),
+            bodyStatusStack.topAnchor.constraint(equalTo: bodyStatusCard.topAnchor),
+            bodyStatusStack.bottomAnchor.constraint(equalTo: bodyStatusCard.bottomAnchor)
+        ])
+        stack.addArrangedSubview(bodyStatusCard)
+
+        let bodyStatusNote = NSTextField(wrappingLabelWithString: "배부르면 먹이 반응을 잠시 쉽니다. 냄새 농도는 계속 표시되며, 그림자와 접촉에는 반응합니다.")
+        bodyStatusNote.font = .systemFont(ofSize: 10, weight: .regular)
+        bodyStatusNote.textColor = NeuroFlyStyle.dimInk
+        stack.addArrangedSubview(bodyStatusNote)
 
         stack.addArrangedSubview(sectionTitle("감각 입력", detail: "더듬이에서 감지한 냄새 농도 · 뉴런 발화율과 다름 · 좌우는 화면이 아닌 펫 몸 기준"))
         let sensory = ["냄새 · 몸 왼쪽", "냄새 · 몸 오른쪽", "단맛", "그림자 · 몸 왼쪽", "그림자 · 몸 오른쪽", "접촉"]

@@ -67,6 +67,29 @@ final class BrainEngineTests: XCTestCase {
         XCTAssertEqual(blocked, baseline, "Every neural readout must match the same-time unstimulated control")
     }
 
+    func testSatietyRemovesFoodDriveWithoutChangingRawInput() throws {
+        let brain = try BrainEngine(dataDirectory: dataDirectory(), seed: 42)
+        let raw = SensoryInput(odorLeft: 0.8, odorRight: 0.4, taste: 1)
+        let baseline = try response(brain, input: SensoryInput())
+        let hungry = try response(brain, input: raw, foodDrive: 1)
+        let full = try response(brain, input: raw, foodDrive: 0)
+        XCTAssertGreaterThan(hungry.odorRelayLeftHz + hungry.odorRelayRightHz, 30)
+        XCTAssertGreaterThan(hungry.feedingHz, baseline.feedingHz + 8)
+        XCTAssertEqual(full, baseline)
+        XCTAssertEqual(raw, SensoryInput(odorLeft: 0.8, odorRight: 0.4, taste: 1))
+    }
+
+    func testSatietyPreservesThreatPathways() throws {
+        let brain = try BrainEngine(dataDirectory: dataDirectory(), seed: 42)
+        let threat = SensoryInput(loomingLeft: 1, loomingRight: 1, touch: 1)
+        let threatOnly = try response(brain, input: threat)
+        let fullWithFood = try response(brain,
+            input: SensoryInput(odorLeft: 1, odorRight: 1, taste: 1,
+                                loomingLeft: 1, loomingRight: 1, touch: 1), foodDrive: 0)
+        XCTAssertEqual(fullWithFood, threatOnly)
+        XCTAssertGreaterThan(fullWithFood.escapeHz, 10)
+    }
+
     func testVisualAndTouchStimuliDriveEscapeThroughTheGraph() throws {
         let brain = try BrainEngine(dataDirectory: dataDirectory(), seed: 42)
         let baseline = try response(brain, input: SensoryInput())
@@ -84,10 +107,12 @@ final class BrainEngineTests: XCTestCase {
         XCTAssertThrowsError(try brain.advance(milliseconds: -1, input: SensoryInput()))
     }
 
-    private func response(_ brain: BrainEngine, input: SensoryInput, enabled: Bool = true) throws -> NeuralReadout {
+    private func response(_ brain: BrainEngine, input: SensoryInput, enabled: Bool = true,
+                          foodDrive: Float = 1) throws -> NeuralReadout {
         try brain.reset(seed: 42)
         _ = try brain.advance(milliseconds: 500, input: SensoryInput())
-        var result = try brain.advance(milliseconds: 500, input: input, sensoryEnabled: enabled)
+        var result = try brain.advance(milliseconds: 500, input: input,
+                                       sensoryEnabled: enabled, foodDrive: foodDrive)
         result.computationMilliseconds = 0
         return result
     }

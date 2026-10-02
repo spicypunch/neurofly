@@ -10,8 +10,13 @@
   },
   "tests": {
     "configuration": "release",
-    "passed": 19,
-    "failed": 0
+    "passed": 29,
+    "failed": 0,
+    "suites": {
+      "BodyState": 6,
+      "BrainEngine": 10,
+      "World": 13
+    }
   },
   "historicalBenchmark": {
     "sourceCommit": "0f191b983ddfe5fdd57ad0c58f6937291302145c",
@@ -20,7 +25,15 @@
     "simulationToWallRatio": 10.359224676193389,
     "maximumResidentBytes": 245743616
   },
-  "foraging": {
+  "limitations": [
+    "Fixed seed 42, six bearings and three distances; arbitrary desktop placement is not guaranteed",
+    "Historical headless benchmark predates this foraging repair and excludes GUI and startup",
+    "Sensory contrast encoding, neural output lookup, and body search are engineered adapters, not validated biological food-seeking behavior",
+    "Current hunger cycle uses model time, fixed seed 42 and a new second food; it does not validate biological hunger or food memory",
+    "Current satiety can leave food uneaten; historical full-depletion results predate hunger",
+    "Memory, learning, multiple individuals and MaleCNS conversion are not implemented"
+  ],
+  "historicalForaging": {
     "world": {
       "height": 1400,
       "initialFlyPosition": {
@@ -302,11 +315,335 @@
           "consumedFraction": 0.36191999999999735
         }
       ]
-    }
+    },
+    "sourceCommit": "4faf5f3e47021e604447bc8fb16d733b2ae0e596",
+    "scope": "Historical measurements before BodyState hunger was added"
   },
-  "limitations": [
-    "Fixed seed 42, six bearings and three distances; arbitrary desktop placement is not guaranteed",
-    "Historical headless benchmark predates this foraging repair and excludes GUI and startup",
-    "Sensory contrast encoding, neural output lookup, and body search are engineered adapters, not validated biological food-seeking behavior"
-  ]
+  "foraging": {
+    "world": {
+      "height": 1400,
+      "initialFlyPosition": {
+        "x": 1024,
+        "y": 728
+      },
+      "initialFoodRemaining": 1,
+      "initialHeadingRadians": 0,
+      "width": 2560
+    },
+    "modelSeconds": 30,
+    "warmupSeconds": 0.5,
+    "distancesPixels": [
+      120,
+      220,
+      360
+    ],
+    "bearingsDegrees": [
+      0,
+      45,
+      -45,
+      90,
+      -90,
+      180
+    ],
+    "scope": "Current engineered hunger and satiety enabled",
+    "contacted": 18,
+    "consumed": 18,
+    "total": 18,
+    "satietyReached": 16,
+    "blockedControlsMatchNoFood": true,
+    "blockedControlCount": 3,
+    "trials": [
+      {
+        "distancePixels": 120,
+        "bearingDegrees": 0,
+        "contactTimeSeconds": 23.8,
+        "minDistancePixels": 27.849507374201096,
+        "consumedFraction": 0.389999999999997,
+        "finalBody": {
+          "consumedFood": 0.3900000000000001,
+          "hunger": 0.24478355444491112,
+          "isFoodMotivated": true
+        }
+      },
+      {
+        "distancePixels": 120,
+        "bearingDegrees": 45,
+        "contactTimeSeconds": 2.633,
+        "minDistancePixels": 7.798382233605103,
+        "consumedFraction": 0.39220999999999706,
+        "finalBody": {
+          "consumedFood": 0.39221000000000017,
+          "hunger": 0.24391217154720346,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 120,
+        "bearingDegrees": -45,
+        "contactTimeSeconds": 3.433,
+        "minDistancePixels": 29.917802880607162,
+        "consumedFraction": 0.39220999999999706,
+        "finalBody": {
+          "consumedFood": 0.39221000000000017,
+          "hunger": 0.24372503000619997,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 120,
+        "bearingDegrees": 90,
+        "contactTimeSeconds": 3.133,
+        "minDistancePixels": 16.233821656747676,
+        "consumedFraction": 0.4029999999999969,
+        "finalBody": {
+          "consumedFood": 0.4030000000000002,
+          "hunger": 0.23076866470958565,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 120,
+        "bearingDegrees": -90,
+        "contactTimeSeconds": 3.666,
+        "minDistancePixels": 19.437351594500996,
+        "consumedFraction": 0.398709999999997,
+        "finalBody": {
+          "consumedFood": 0.3987100000000002,
+          "hunger": 0.2359206708315462,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 120,
+        "bearingDegrees": 180,
+        "contactTimeSeconds": 6.6,
+        "minDistancePixels": 26.170498347922784,
+        "consumedFraction": 0.40514499999999687,
+        "finalBody": {
+          "consumedFood": 0.4051450000000002,
+          "hunger": 0.22784102603500084,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": 0,
+        "contactTimeSeconds": 4.266,
+        "minDistancePixels": 17.027645232887707,
+        "consumedFraction": 0.403064999999997,
+        "finalBody": {
+          "consumedFood": 0.4030650000000002,
+          "hunger": 0.23122168137134866,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": 45,
+        "contactTimeSeconds": 6.8,
+        "minDistancePixels": 28.795343785071093,
+        "consumedFraction": 0.3985799999999968,
+        "finalBody": {
+          "consumedFood": 0.39858000000000016,
+          "hunger": 0.235594165545612,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": -45,
+        "contactTimeSeconds": 6.5,
+        "minDistancePixels": 13.495607531505463,
+        "consumedFraction": 0.4180799999999967,
+        "finalBody": {
+          "consumedFood": 0.41808000000000023,
+          "hunger": 0.21223459779549697,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": 90,
+        "contactTimeSeconds": 7.466,
+        "minDistancePixels": 18.633210239852495,
+        "consumedFraction": 0.40078999999999687,
+        "finalBody": {
+          "consumedFood": 0.4007900000000002,
+          "hunger": 0.23289277195406993,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": -90,
+        "contactTimeSeconds": 19.633,
+        "minDistancePixels": 24.467800539813922,
+        "consumedFraction": 0.42678999999999667,
+        "finalBody": {
+          "consumedFood": 0.4267900000000002,
+          "hunger": 0.20074969419819,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 220,
+        "bearingDegrees": 180,
+        "contactTimeSeconds": 9.733,
+        "minDistancePixels": 27.1114139569842,
+        "consumedFraction": 0.40514499999999687,
+        "finalBody": {
+          "consumedFood": 0.4051450000000002,
+          "hunger": 0.2274780303269405,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": 0,
+        "contactTimeSeconds": 27.333,
+        "minDistancePixels": 38.3880295058721,
+        "consumedFraction": 0.17549999999999866,
+        "finalBody": {
+          "consumedFood": 0.1755,
+          "hunger": 0.5027015946601816,
+          "isFoodMotivated": true
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": 45,
+        "contactTimeSeconds": 13.033,
+        "minDistancePixels": 14.291152097690984,
+        "consumedFraction": 0.4224349999999967,
+        "finalBody": {
+          "consumedFood": 0.4224350000000002,
+          "hunger": 0.20630630014478898,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": -45,
+        "contactTimeSeconds": 12.133,
+        "minDistancePixels": 27.674545827703373,
+        "consumedFraction": 0.4117099999999969,
+        "finalBody": {
+          "consumedFood": 0.41171000000000024,
+          "hunger": 0.21944167799034814,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": 90,
+        "contactTimeSeconds": 14.566,
+        "minDistancePixels": 22.199392047807553,
+        "consumedFraction": 0.42249999999999677,
+        "finalBody": {
+          "consumedFood": 0.4225000000000002,
+          "hunger": 0.20622332171531724,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": -90,
+        "contactTimeSeconds": 13.2,
+        "minDistancePixels": 26.07825729352267,
+        "consumedFraction": 0.4160649999999969,
+        "finalBody": {
+          "consumedFood": 0.41606500000000024,
+          "hunger": 0.214533430464438,
+          "isFoodMotivated": false
+        }
+      },
+      {
+        "distancePixels": 360,
+        "bearingDegrees": 180,
+        "contactTimeSeconds": 18.3,
+        "minDistancePixels": 10.246795245209075,
+        "consumedFraction": 0.42698499999999695,
+        "finalBody": {
+          "consumedFood": 0.4269850000000002,
+          "hunger": 0.20071719839302873,
+          "isFoodMotivated": false
+        }
+      }
+    ]
+  },
+  "hunger": {
+    "clearFoodBodyUnchanged": true,
+    "cyclesCompleted": true,
+    "finalHunger": 0.19953890709408828,
+    "firstFoodConsumed": 0.40949999999999687,
+    "firstFoodRemainingAtClear": 0.5905000000000031,
+    "initialFoodMotivated": true,
+    "initialHunger": 0.65,
+    "maxPNDuringHungry": 875.0803833007812,
+    "maxPNDuringSettledFull": 3.723055124282837e-05,
+    "milestones": [
+      {
+        "consumedFood": 0,
+        "foodDrive": 1,
+        "hunger": 0.65,
+        "name": "initial",
+        "remainingFood": 1,
+        "timeSeconds": 0
+      },
+      {
+        "consumedFood": 0.3964350000000002,
+        "foodDrive": 0,
+        "hunger": 0.19983018381757345,
+        "name": "firstFoodFull",
+        "remainingFood": 0.6035650000000031,
+        "timeSeconds": 12.466
+      },
+      {
+        "consumedFood": 0.4095000000000002,
+        "foodDrive": 0,
+        "hunger": 0.19516064457912563,
+        "name": "firstFoodClearedAfterFull",
+        "remainingFood": 0,
+        "timeSeconds": 17.466
+      },
+      {
+        "consumedFood": 0.4095000000000002,
+        "foodDrive": 1,
+        "hunger": 0.6000424259190205,
+        "name": "secondFoodPlacedAfterRecovery",
+        "remainingFood": 1,
+        "timeSeconds": 200.566
+      },
+      {
+        "consumedFood": 0.7669999999999982,
+        "foodDrive": 0,
+        "hunger": 0.19953890709408828,
+        "name": "secondFoodFull",
+        "remainingFood": 0.6425000000000027,
+        "timeSeconds": 214.366
+      }
+    ],
+    "modelSeconds": 214.366,
+    "movementDuringFullPixels": 242.03058277248445,
+    "recoveryDurationSeconds": 183.1,
+    "schemaVersion": 1,
+    "secondFoodConsumed": 0.35749999999999726,
+    "secondMealCompletionSeconds": 13.800000000000011,
+    "seed": 42,
+    "totalConsumed": 0.7669999999999982,
+    "world": {
+      "height": 1400,
+      "width": 2560
+    },
+    "bodyModel": {
+      "initialHunger": 0.65,
+      "foodDriveOffThreshold": 0.2,
+      "foodDriveOnThreshold": 0.6,
+      "metabolismPerSecond": "0.002 + 0.0005 * min(1, speed / 120)",
+      "hungerReductionPerFoodUnit": 1.2,
+      "clock": "model time only",
+      "scope": "Engineered body-state regulation of odor and taste input; not a biological hunger circuit"
+    },
+    "protocol": "After first satiety, observe 5 seconds then clear remaining food. Recover naturally with no food, then place a NEW food 120 pixels toward world center. This does not test memory."
+  }
 }

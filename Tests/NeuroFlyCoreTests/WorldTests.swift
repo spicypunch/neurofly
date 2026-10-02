@@ -78,10 +78,45 @@ final class WorldTests: XCTestCase {
         var world = SimulationWorld()
         world.perform(.touchFly); world.perform(.togglePause)
         let before = world.snapshot.fly
+        let beforeBody = world.snapshot.body
         world.advance(neural: NeuralReadout(forwardHz: 50), input: world.sense(), dt: 0.05)
         XCTAssertEqual(world.snapshot.fly, before)
         XCTAssertEqual(world.snapshot.elapsed, 0)
         XCTAssertEqual(world.sense().touch, 1)
+        XCTAssertEqual(world.snapshot.body, beforeBody)
+    }
+
+    func testBodyCountsOnlyFoodActuallyConsumedAndResetRestoresHunger() {
+        var world = SimulationWorld()
+        let initialBody = world.snapshot.body
+        let fly = world.snapshot.fly.position
+        world.perform(.placeFood(Point2(x: fly.x + 18, y: fly.y)))
+        XCTAssertEqual(world.snapshot.body, initialBody)
+        // Taste alone changes no intake. Time still advances metabolism.
+        world.advance(neural: NeuralReadout(), input: world.sense(), dt: 0.1)
+        XCTAssertEqual(world.snapshot.body.consumedFood, 0)
+        XCTAssertGreaterThan(world.snapshot.body.hunger, initialBody.hunger)
+        world.advance(neural: NeuralReadout(feedingHz: 50), input: world.sense(), dt: 0.1)
+        XCTAssertEqual(world.snapshot.body.consumedFood, 1 - world.snapshot.foods[0].remaining, accuracy: 1e-12)
+        XCTAssertLessThan(world.snapshot.body.hunger, initialBody.hunger)
+        let beforeClear = world.snapshot.body
+        world.perform(.clearFood)
+        XCTAssertEqual(world.snapshot.body, beforeClear)
+        world.perform(.reset)
+        XCTAssertEqual(world.snapshot.body, initialBody)
+    }
+
+    func testFullBodyStillReportsRawOdorAndTaste() {
+        var world = SimulationWorld(initialHunger: 0.1)
+        let fly = world.snapshot.fly.position
+        world.perform(.placeFood(Point2(x: fly.x + 18, y: fly.y)))
+        let raw = world.sense()
+        XCTAssertGreaterThan(raw.odorLeft, 0.5)
+        XCTAssertEqual(raw.taste, 1)
+        XCTAssertEqual(world.snapshot.body.foodDrive, 0)
+        world.advance(neural: NeuralReadout(), input: raw, dt: 0.033)
+        XCTAssertEqual(world.snapshot.sensory, raw)
+        XCTAssertEqual(world.snapshot.body.consumedFood, 0)
     }
 
     func testInvalidCoordinatesAndResizeCannotCorruptWorld() {

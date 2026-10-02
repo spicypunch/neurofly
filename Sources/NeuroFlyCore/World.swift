@@ -114,9 +114,10 @@ public struct SimulationWorld: Sendable {
     private var touchRemaining: Double = 0
     private var decoder = MotorDecoder()
 
-    public init(width: Double = 1000, height: Double = 650) {
+    public init(width: Double = 1000, height: Double = 650, initialHunger: Double = 0.65) {
         snapshot.width = max(180, width); snapshot.height = max(180, height)
         snapshot.fly.position = Point2(x: snapshot.width * 0.4, y: snapshot.height * 0.52)
+        snapshot.body = BodyState(hunger: initialHunger)
     }
 
     public mutating func calibrate(_ baseline: NeuralReadout) { decoder.calibrate(baseline) }
@@ -211,7 +212,7 @@ public struct SimulationWorld: Sendable {
 
     /// Kept separate so tests can prove body motion depends on motor signals, not objects.
     public mutating func advanceBody(motor: MotorCommand, dt: Double) {
-        guard dt.isFinite, dt > 0, motor.speed.isFinite, motor.turnRate.isFinite else { return }
+        guard !snapshot.isPaused, dt.isFinite, dt > 0, motor.speed.isFinite, motor.turnRate.isFinite else { return }
         snapshot.fly.heading += motor.turnRate * dt
         snapshot.fly.heading = atan2(sin(snapshot.fly.heading), cos(snapshot.fly.heading))
         let blend = 1 - exp(-dt / (motor.activity == .feeding || motor.activity == .grooming ? 0.04 : 0.16))
@@ -231,14 +232,18 @@ public struct SimulationWorld: Sendable {
             snapshot.fly.heading = -snapshot.fly.heading
             snapshot.fly.speed *= 0.7
         }
+        var foodConsumed = 0.0
         if motor.activity == .feeding {
             let mouth = Point2(x: snapshot.fly.position.x + cos(snapshot.fly.heading) * 18,
                                y: snapshot.fly.position.y + sin(snapshot.fly.heading) * 18)
             for i in snapshot.foods.indices where mouth.distance(to: snapshot.foods[i].position) <= 30 {
-                snapshot.foods[i].remaining = max(0, snapshot.foods[i].remaining - dt * 0.065)
+                let consumed = min(snapshot.foods[i].remaining, dt * 0.065)
+                snapshot.foods[i].remaining -= consumed
+                foodConsumed += consumed
             }
             snapshot.foods.removeAll { $0.remaining <= 0 }
         }
+        snapshot.body.advance(seconds: dt, speed: snapshot.fly.speed, foodConsumed: foodConsumed)
     }
 
     private func constrained(_ p: Point2, inset: Double) -> Point2 {

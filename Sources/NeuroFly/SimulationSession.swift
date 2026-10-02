@@ -104,7 +104,8 @@ private final class SimulationRuntime: @unchecked Sendable {
             frameNumber += 1
             let input = world.sense()
             let rates = try brain.advance(milliseconds: milliseconds, input: input,
-                                          sensoryEnabled: world.snapshot.sensoryEnabled)
+                                          sensoryEnabled: world.snapshot.sensoryEnabled,
+                                          foodDrive: world.snapshot.body.foodDrive)
             world.advance(neural: rates, input: input, dt: Double(milliseconds) / 1000)
             intervalSimulated += Double(milliseconds) / 1000
             let now = ProcessInfo.processInfo.systemUptime

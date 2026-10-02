@@ -6,9 +6,10 @@ import NeuroFlyCore
 struct NeuroFlyMain {
     @MainActor static func main() {
         let args = CommandLine.arguments
-        if args.contains("--probe") || args.contains("--benchmark") || args.contains("--experiment") || args.contains("--foraging") {
+        if args.contains("--probe") || args.contains("--benchmark") || args.contains("--experiment") || args.contains("--foraging") || args.contains("--hunger") {
             do {
-                if args.contains("--foraging") { try runForagingDiagnostics() }
+                if args.contains("--hunger") { try runHungerDiagnostics() }
+                else if args.contains("--foraging") { try runForagingDiagnostics() }
                 else if args.contains("--experiment") { try runWorldExperiment() }
                 else { try runDiagnostics(benchmark: args.contains("--benchmark")) }
             }
@@ -85,7 +86,8 @@ struct NeuroFlyMain {
             for tick in 0..<900 {
                 let milliseconds = tick % 3 == 2 ? 34 : 33
                 let input = world.sense()
-                let response = try brain.advance(milliseconds: milliseconds, input: input, sensoryEnabled: world.snapshot.sensoryEnabled)
+                let response = try brain.advance(milliseconds: milliseconds, input: input,
+                    sensoryEnabled: world.snapshot.sensoryEnabled, foodDrive: world.snapshot.body.foodDrive)
                 world.advance(neural: response, input: input, dt: Double(milliseconds) / 1000)
                 minDistance = min(minDistance, world.snapshot.fly.position.distance(to: target))
                 if input.taste > 0 { tasteFrames += 1 }

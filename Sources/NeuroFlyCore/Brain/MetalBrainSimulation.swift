@@ -453,7 +453,7 @@ final class MetalBrainSimulation {
             "escape": "DNp01/GF role: \(roleEscape.count)",
             "feeding": "CB0701 MN9 correspondence root IDs: \(roleFeeding.count)",
             "grooming": "DNg11: \(roleGrooming.count)",
-            "model": "Fixed-step LIF with explicit engineered baseline/noise/gain parameters; no hunger, learning, or memory",
+            "model": "Fixed-step LIF with engineered baseline/noise/gain and body-state food modulation; no biological hunger circuit, learning, or memory",
             "inputContract": "External channels are assigned only to sensory receptor/pathway neurons; command neurons receive graph drive",
         ]
         return Mapping(sensoryKinds: sensory, groupOf: groups,
@@ -570,7 +570,8 @@ final class MetalBrainSimulation {
         applySeed(seed)
     }
 
-    func advance(milliseconds: Int, input: SensoryInput, sensoryEnabled: Bool) throws -> NeuralReadout {
+    func advance(milliseconds: Int, input: SensoryInput, sensoryEnabled: Bool,
+                 foodDrive: Float) throws -> NeuralReadout {
         guard milliseconds >= 0 else {
             throw BrainEngineError.invalidArgument("milliseconds must be non-negative")
         }
@@ -578,7 +579,7 @@ final class MetalBrainSimulation {
             return currentReadout()
         }
         let start = DispatchTime.now().uptimeNanoseconds
-        let safeInput = Self.sanitize(input, enabled: sensoryEnabled)
+        let safeInput = Self.sanitize(input, enabled: sensoryEnabled, foodDrive: foodDrive)
         var remaining = milliseconds
         while remaining > 0 {
             let batch = min(remaining, maxBatch)
@@ -589,7 +590,7 @@ final class MetalBrainSimulation {
         return currentReadout()
     }
 
-    private static func sanitize(_ input: SensoryInput, enabled: Bool) -> [Float] {
+    private static func sanitize(_ input: SensoryInput, enabled: Bool, foodDrive: Float) -> [Float] {
         guard enabled else { return [0, 0, 0, 0, 0, 0] }
         func clean(_ value: Float) -> Float {
             guard value.isFinite else { return 0 }
@@ -602,12 +603,13 @@ final class MetalBrainSimulation {
         // strong common response. This is not a biological receptor model.
         // Only ORNs get this drive; PNs receive propagated graph spikes only.
         let odorLeft = clean(input.odorLeft), odorRight = clean(input.odorRight)
+        let motivation = clean(foodDrive)
         let odorSum = odorLeft + odorRight
         let common = sqrt(odorSum * 0.5) * 0.22
         let contrast = max(-0.95, min(0.95, 10 * (odorLeft - odorRight) / max(0.02, odorSum)))
-        return [min(0.22, common * (1 + contrast)),
-                min(0.22, common * (1 - contrast)),
-                clean(input.taste) * 0.30,
+        return [min(0.22, common * (1 + contrast)) * motivation,
+                min(0.22, common * (1 - contrast)) * motivation,
+                clean(input.taste) * 0.30 * motivation,
                 clean(input.loomingLeft) * 0.34,
                 clean(input.loomingRight) * 0.34,
                 clean(input.touch) * 0.28]
