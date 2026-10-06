@@ -1,5 +1,5 @@
 {
-  "recordedDateKST": "2026-10-02",
+  "recordedDateKST": "2026-10-06",
   "device": "Apple M1 Pro",
   "seed": 42,
   "graph": {
@@ -10,13 +10,18 @@
   },
   "tests": {
     "configuration": "release",
-    "passed": 29,
+    "passed": 67,
     "failed": 0,
     "suites": {
       "BodyState": 6,
       "BrainEngine": 10,
-      "World": 13
-    }
+      "BrainModel": 9,
+      "ColonyStore": 4,
+      "FlyMemory": 14,
+      "PopulationWorld": 9,
+      "World": 15
+    },
+    "evidence": "artifacts/evolution-tests-final.log"
   },
   "historicalBenchmark": {
     "sourceCommit": "0f191b983ddfe5fdd57ad0c58f6937291302145c",
@@ -31,7 +36,12 @@
     "Sensory contrast encoding, neural output lookup, and body search are engineered adapters, not validated biological food-seeking behavior",
     "Current hunger cycle uses model time, fixed seed 42 and a new second food; it does not validate biological hunger or food memory",
     "Current satiety can leave food uneaten; historical full-depletion results predate hunger",
-    "Memory, learning, multiple individuals and MaleCNS conversion are not implemented"
+    "Associative food memory adjusts virtual odor gains outside the fixed connectome; it is not biological synaptic plasticity.",
+    "Population resident memory is peak process memory with four engines allocated; runtime factors exclude GUI and startup.",
+    "The two-food assay uses two half-full foods. FlyWire chooses banana both before and after training; Male CNS changes from banana to berry. These fixed-seed results show modulation, not improved preference or biological learning.",
+    "Male CNS includes a late contact at 29.666 seconds with only 0.002145 consumption by the 30-second cutoff. Contact success does not imply a complete meal.",
+    "Native GUI checks cover both models with two profiles and the 1–4 profile controls; headless population performance excludes GUI and startup.",
+    "In the Male CNS four-individual trial, one individual consumed no food while the other three consumed the shared supply; the test proves conservation and isolation, not equal feeding."
   ],
   "historicalForaging": {
     "world": {
@@ -345,11 +355,12 @@
       -90,
       180
     ],
-    "scope": "Current engineered hunger and satiety enabled",
+    "brainModel": "flywire-v783",
+    "seed": 42,
+    "scope": "Fixed seed 42, 18 placements, one food, 30 model seconds; no guarantee for arbitrary placement or learned odor gains.",
     "contacted": 18,
     "consumed": 18,
     "total": 18,
-    "satietyReached": 16,
     "blockedControlsMatchNoFood": true,
     "blockedControlCount": 3,
     "trials": [
@@ -358,220 +369,233 @@
         "bearingDegrees": 0,
         "contactTimeSeconds": 23.8,
         "minDistancePixels": 27.849507374201096,
-        "consumedFraction": 0.389999999999997,
-        "finalBody": {
-          "consumedFood": 0.3900000000000001,
-          "hunger": 0.24478355444491112,
-          "isFoodMotivated": true
-        }
+        "consumedFraction": 0.3727099999999972,
+        "trajectoryDigest": "e80bd4697574b337"
       },
       {
         "distancePixels": 120,
         "bearingDegrees": 45,
         "contactTimeSeconds": 2.633,
-        "minDistancePixels": 7.798382233605103,
-        "consumedFraction": 0.39220999999999706,
-        "finalBody": {
-          "consumedFood": 0.39221000000000017,
-          "hunger": 0.24391217154720346,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 5.83439815964855,
+        "consumedFraction": 0.3964349999999969,
+        "trajectoryDigest": "f5845febcde6a307"
       },
       {
         "distancePixels": 120,
         "bearingDegrees": -45,
         "contactTimeSeconds": 3.433,
-        "minDistancePixels": 29.917802880607162,
-        "consumedFraction": 0.39220999999999706,
-        "finalBody": {
-          "consumedFood": 0.39221000000000017,
-          "hunger": 0.24372503000619997,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 27.85438486115901,
+        "consumedFraction": 0.4029999999999969,
+        "trajectoryDigest": "cbd0077cc442fe18"
       },
       {
         "distancePixels": 120,
         "bearingDegrees": 90,
         "contactTimeSeconds": 3.133,
-        "minDistancePixels": 16.233821656747676,
-        "consumedFraction": 0.4029999999999969,
-        "finalBody": {
-          "consumedFood": 0.4030000000000002,
-          "hunger": 0.23076866470958565,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 10.57556765089356,
+        "consumedFraction": 0.40091999999999706,
+        "trajectoryDigest": "7be7e8d964152638"
       },
       {
         "distancePixels": 120,
         "bearingDegrees": -90,
         "contactTimeSeconds": 3.666,
-        "minDistancePixels": 19.437351594500996,
-        "consumedFraction": 0.398709999999997,
-        "finalBody": {
-          "consumedFood": 0.3987100000000002,
-          "hunger": 0.2359206708315462,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 19.10933423694612,
+        "consumedFraction": 0.3986449999999969,
+        "trajectoryDigest": "170e3d7874ea1abe"
       },
       {
         "distancePixels": 120,
         "bearingDegrees": 180,
         "contactTimeSeconds": 6.6,
-        "minDistancePixels": 26.170498347922784,
-        "consumedFraction": 0.40514499999999687,
-        "finalBody": {
-          "consumedFood": 0.4051450000000002,
-          "hunger": 0.22784102603500084,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 21.63685707027339,
+        "consumedFraction": 0.3987749999999971,
+        "trajectoryDigest": "724543e70288a251"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": 0,
         "contactTimeSeconds": 4.266,
-        "minDistancePixels": 17.027645232887707,
-        "consumedFraction": 0.403064999999997,
-        "finalBody": {
-          "consumedFood": 0.4030650000000002,
-          "hunger": 0.23122168137134866,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 11.69427891187977,
+        "consumedFraction": 0.42886999999999653,
+        "trajectoryDigest": "1bc7c34782558844"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": 45,
         "contactTimeSeconds": 6.8,
-        "minDistancePixels": 28.795343785071093,
-        "consumedFraction": 0.3985799999999968,
-        "finalBody": {
-          "consumedFood": 0.39858000000000016,
-          "hunger": 0.235594165545612,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 25.508882329986182,
+        "consumedFraction": 0.4180799999999967,
+        "trajectoryDigest": "d442ab94c42535a3"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": -45,
         "contactTimeSeconds": 6.5,
-        "minDistancePixels": 13.495607531505463,
-        "consumedFraction": 0.4180799999999967,
-        "finalBody": {
-          "consumedFood": 0.41808000000000023,
-          "hunger": 0.21223459779549697,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 4.1653093931150655,
+        "consumedFraction": 0.42022499999999663,
+        "trajectoryDigest": "ae0e63c96b3c173e"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": 90,
         "contactTimeSeconds": 7.466,
-        "minDistancePixels": 18.633210239852495,
-        "consumedFraction": 0.40078999999999687,
-        "finalBody": {
-          "consumedFood": 0.4007900000000002,
-          "hunger": 0.23289277195406993,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 14.710168461241038,
+        "consumedFraction": 0.40514499999999687,
+        "trajectoryDigest": "1b502ddbad469a0b"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": -90,
         "contactTimeSeconds": 19.633,
-        "minDistancePixels": 24.467800539813922,
-        "consumedFraction": 0.42678999999999667,
-        "finalBody": {
-          "consumedFood": 0.4267900000000002,
-          "hunger": 0.20074969419819,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 19.1665535177905,
+        "consumedFraction": 0.4245799999999966,
+        "trajectoryDigest": "17a1a33967d87ff6"
       },
       {
         "distancePixels": 220,
         "bearingDegrees": 180,
         "contactTimeSeconds": 9.733,
-        "minDistancePixels": 27.1114139569842,
-        "consumedFraction": 0.40514499999999687,
-        "finalBody": {
-          "consumedFood": 0.4051450000000002,
-          "hunger": 0.2274780303269405,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 28.851977778184107,
+        "consumedFraction": 0.4073549999999969,
+        "trajectoryDigest": "6732cd3a04bce551"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": 0,
         "contactTimeSeconds": 27.333,
         "minDistancePixels": 38.3880295058721,
-        "consumedFraction": 0.17549999999999866,
-        "finalBody": {
-          "consumedFood": 0.1755,
-          "hunger": 0.5027015946601816,
-          "isFoodMotivated": true
-        }
+        "consumedFraction": 0.17114499999999866,
+        "trajectoryDigest": "8633727f3bd9a90b"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": 45,
         "contactTimeSeconds": 13.033,
-        "minDistancePixels": 14.291152097690984,
-        "consumedFraction": 0.4224349999999967,
-        "finalBody": {
-          "consumedFood": 0.4224350000000002,
-          "hunger": 0.20630630014478898,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 9.465017809033803,
+        "consumedFraction": 0.4354349999999966,
+        "trajectoryDigest": "5c594ef26bac3875"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": -45,
         "contactTimeSeconds": 12.133,
-        "minDistancePixels": 27.674545827703373,
-        "consumedFraction": 0.4117099999999969,
-        "finalBody": {
-          "consumedFood": 0.41171000000000024,
-          "hunger": 0.21944167799034814,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 24.921046514498542,
+        "consumedFraction": 0.41378999999999677,
+        "trajectoryDigest": "9b0b295d197fca00"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": 90,
         "contactTimeSeconds": 14.566,
-        "minDistancePixels": 22.199392047807553,
-        "consumedFraction": 0.42249999999999677,
-        "finalBody": {
-          "consumedFood": 0.4225000000000002,
-          "hunger": 0.20622332171531724,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 26.57457339522077,
+        "consumedFraction": 0.4246449999999967,
+        "trajectoryDigest": "95409942b0c0d941"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": -90,
         "contactTimeSeconds": 13.2,
-        "minDistancePixels": 26.07825729352267,
-        "consumedFraction": 0.4160649999999969,
-        "finalBody": {
-          "consumedFood": 0.41606500000000024,
-          "hunger": 0.214533430464438,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 25.958743558134028,
+        "consumedFraction": 0.42691999999999686,
+        "trajectoryDigest": "8e3ee7b670f2a2b6"
       },
       {
         "distancePixels": 360,
         "bearingDegrees": 180,
         "contactTimeSeconds": 18.3,
-        "minDistancePixels": 10.246795245209075,
-        "consumedFraction": 0.42698499999999695,
-        "finalBody": {
-          "consumedFood": 0.4269850000000002,
-          "hunger": 0.20071719839302873,
-          "isFoodMotivated": false
-        }
+        "minDistancePixels": 6.962260982262608,
+        "consumedFraction": 0.42678999999999667,
+        "trajectoryDigest": "1756b4139002bb7d"
       }
     ]
   },
   "hunger": {
+    "brainModel": "flywire-v783",
+    "brainReceivesCoordinates": false,
+    "clearFoodBodyUnchanged": true,
+    "cyclesCompleted": true,
+    "finalHunger": 0.19822505025549303,
+    "firstFoodConsumed": 0.4050799999999968,
+    "firstFoodPosition": {
+      "x": 1144,
+      "y": 728
+    },
+    "firstFoodRemainingAtClear": 0.5949200000000032,
+    "initialFoodMotivated": true,
+    "initialHunger": 0.65,
+    "maxPNDuringHungry": 900.7615966796875,
+    "maxPNDuringSettledFull": 3.998453757958487e-05,
+    "milestones": [
+      {
+        "consumedFood": 0,
+        "foodDrive": 1,
+        "hunger": 0.65,
+        "name": "initial",
+        "remainingFood": 1,
+        "timeSeconds": 0
+      },
+      {
+        "consumedFood": 0.3964350000000002,
+        "foodDrive": 0,
+        "hunger": 0.19975754403262522,
+        "name": "firstFoodFull",
+        "remainingFood": 0.6035650000000031,
+        "timeSeconds": 12.433
+      },
+      {
+        "consumedFood": 0.4050800000000002,
+        "foodDrive": 0,
+        "hunger": 0.200419973252606,
+        "name": "firstFoodClearedAfterFull",
+        "remainingFood": 0,
+        "timeSeconds": 17.433
+      },
+      {
+        "consumedFood": 0.4050800000000002,
+        "foodDrive": 1,
+        "hunger": 0.6000570098494709,
+        "name": "secondFoodPlacedAfterRecovery",
+        "remainingFood": 1,
+        "timeSeconds": 198.633
+      },
+      {
+        "consumedFood": 0.7560799999999983,
+        "foodDrive": 0,
+        "hunger": 0.19822505025549303,
+        "name": "secondFoodFull",
+        "remainingFood": 0.6490000000000027,
+        "timeSeconds": 208.033
+      }
+    ],
+    "modelSeconds": 208.033,
+    "movementDuringFullPixels": 248.7430127953682,
+    "recoveryDurationSeconds": 181.20000000000002,
+    "schemaVersion": 1,
+    "secondFoodConsumed": 0.3509999999999973,
+    "secondFoodPosition": {
+      "x": 1497.602955268567,
+      "y": 1090.5863497388941
+    },
+    "secondMealCompletionSeconds": 9.399999999999977,
+    "seed": 42,
+    "totalConsumed": 0.7560799999999983,
+    "world": {
+      "height": 1400,
+      "width": 2560
+    }
+  },
+  "historicalTests": {
+    "configuration": "release",
+    "passed": 29,
+    "failed": 0,
+    "suites": {
+      "BodyState": 6,
+      "BrainEngine": 10,
+      "World": 13
+    }
+  },
+  "historicalHunger": {
     "clearFoodBodyUnchanged": true,
     "cyclesCompleted": true,
     "finalHunger": 0.19953890709408828,
@@ -645,5 +669,1416 @@
       "scope": "Engineered body-state regulation of odor and taste input; not a biological hunger circuit"
     },
     "protocol": "After first satiety, observe 5 seconds then clear remaining food. Recover naturally with no food, then place a NEW food 120 pixels toward world center. This does not test memory."
+  },
+  "evolution": {
+    "flywire": {
+      "learning": {
+        "bananaCueProbe": {
+          "averageFeedingHz": 13.186684845139583,
+          "averageForwardHz": 14.334457725948758,
+          "consumed": 0,
+          "contactFrames": 0,
+          "finalMemory": {
+            "bananaGain": 1.0974705,
+            "bananaValue": 0.09300804372324954,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 24.687372608804992,
+          "firstProbeNeuralDigest": 2.668004081090291,
+          "initialMemory": {
+            "bananaGain": 1.0984969,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 202.33500986472777,
+          "rawOdorAverage": 1.8273026446501415,
+          "rawSensoryPreserved": true,
+          "remaining": 1,
+          "simulatedSeconds": 6,
+          "weightedOdorAverage": 1.9550100353029038
+        },
+        "berryCueProbe": {
+          "averageFeedingHz": 13.9173296365473,
+          "averageForwardHz": 15.74919865793652,
+          "consumed": 0,
+          "contactFrames": 0,
+          "finalMemory": {
+            "bananaGain": 1.0974705,
+            "bananaValue": 0.09300804372324954,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 29.76047305782373,
+          "firstProbeNeuralDigest": 7.003979317347208,
+          "initialMemory": {
+            "bananaGain": 1.0984969,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "kind": "berry",
+          "learningEnabled": true,
+          "pathDistance": 139.9866717017307,
+          "rawOdorAverage": 1.8511952102184295,
+          "rawSensoryPreserved": true,
+          "remaining": 1,
+          "simulatedSeconds": 6,
+          "weightedOdorAverage": 1.8511952102184295
+        },
+        "brainModel": "flywire-v783",
+        "brainReceivesCoordinates": false,
+        "checks": {
+          "actualConsumption": true,
+          "actualFoodChoice": true,
+          "bananaCueDiffersFromBerryCue": true,
+          "disabledNeutral": true,
+          "foodGain": true,
+          "forgetting": true,
+          "graphResponseChanged": true,
+          "movementChanged": true,
+          "persistence": true,
+          "rawSensoryPreserved": true,
+          "reversal": true,
+          "twoFoodRawSensoryPreserved": true
+        },
+        "diagnostic": "learning",
+        "disabled": {
+          "averageFeedingHz": 29.625932418968944,
+          "averageForwardHz": 17.35195331904623,
+          "consumed": 0.36614499999999717,
+          "contactFrames": 174,
+          "finalMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.7712249999999982,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 29.76047305782373,
+          "firstProbeNeuralDigest": 7.003979317347208,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": false,
+          "pathDistance": 148.84411621710083,
+          "rawOdorAverage": 1.7298634697993596,
+          "rawSensoryPreserved": true,
+          "remaining": 0.6338550000000028,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.7298634697993596
+        },
+        "persistence": {
+          "encodedBytes": 296,
+          "equalAfterDecode": true,
+          "restoredProbeMovementDelta": 0,
+          "restoredProbeNeuralDelta": 0
+        },
+        "reversal": {
+          "foodConsumedDuringThreat": 0,
+          "forgottenGain": 0.99629384,
+          "forgottenValue": -0.003713051968419391,
+          "reversedGain": 0.57633525,
+          "reversedValue": -0.5510657725451623,
+          "threatFrames": 240,
+          "trainedGain": 1.0984969,
+          "trainedValue": 0.0939427901028402
+        },
+        "schemaVersion": 1,
+        "trained": {
+          "averageFeedingHz": 13.028629820504122,
+          "averageForwardHz": 15.329108570681678,
+          "consumed": 0,
+          "contactFrames": 0,
+          "finalMemory": {
+            "bananaGain": 1.0964553,
+            "bananaValue": 0.09208259822553809,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 24.687372608804992,
+          "firstProbeNeuralDigest": 2.668004081090291,
+          "initialMemory": {
+            "bananaGain": 1.0984969,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 363.9785663908904,
+          "rawOdorAverage": 1.536247743997309,
+          "rawSensoryPreserved": true,
+          "remaining": 1,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.6604766428470612
+        },
+        "training": {
+          "averageFeedingHz": 21.616656248370806,
+          "averageForwardHz": 17.12874443610509,
+          "consumed": 0.4050799999999968,
+          "contactFrames": 226,
+          "finalMemory": {
+            "bananaGain": 1.0984969,
+            "bananaValue": 0.0939427901028402,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 4,
+            "rewardedIntake": 0.4050800000000002,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 29.76047305782373,
+          "firstProbeNeuralDigest": 7.003979317347208,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 969.7893044735516,
+          "rawOdorAverage": 0.9880956261687809,
+          "rawSensoryPreserved": true,
+          "remaining": 0.5949200000000032,
+          "simulatedSeconds": 30,
+          "weightedOdorAverage": 1.030556557306813
+        },
+        "twoFoodBaseline": {
+          "bananaConsumed": 0.39871000000000034,
+          "berryConsumed": 0,
+          "firstConsumedKind": "banana",
+          "firstProbeMovement": 29.684486257752283,
+          "firstProbeNeuralDigest": 0.2792956892967223,
+          "learningEnabled": false,
+          "pathDistance": 1159.7761783753906,
+          "rawSensoryPreserved": true,
+          "remainingFood": 0.6012899999999997,
+          "simulatedSeconds": 30
+        },
+        "twoFoodChoice": {
+          "bananaConsumed": 0.39435500000000034,
+          "berryConsumed": 0,
+          "firstConsumedKind": "banana",
+          "firstProbeMovement": 35.449031212774216,
+          "firstProbeNeuralDigest": 5.6153514247099565,
+          "learningEnabled": true,
+          "pathDistance": 1260.4476064296186,
+          "rawSensoryPreserved": true,
+          "remainingFood": 0.6056449999999997,
+          "simulatedSeconds": 30
+        },
+        "untrained": {
+          "averageFeedingHz": 29.625932418968944,
+          "averageForwardHz": 17.35195331904623,
+          "consumed": 0.36614499999999717,
+          "contactFrames": 174,
+          "finalMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0.36614500000000016,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 29.76047305782373,
+          "firstProbeNeuralDigest": 7.003979317347208,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": false,
+          "pathDistance": 148.84411621710083,
+          "rawOdorAverage": 1.7298634697993596,
+          "rawSensoryPreserved": true,
+          "remaining": 0.6338550000000028,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.7298634697993596
+        }
+      },
+      "population": {
+        "brainModel": "flywire-v783",
+        "brainReceivesCoordinates": false,
+        "cases": [
+          {
+            "brainCount": 2,
+            "consumedByIndividual": {
+              "00000000-0000-4000-8000-000000000001": 0.38778999999999697,
+              "00000000-0000-4000-8000-000000000002": 0.4139199999999995
+            },
+            "foodConserved": true,
+            "independentBrains": true,
+            "individualCount": 2,
+            "memoryIsolation": true,
+            "memoryStatsByIndividual": {
+              "00000000-0000-4000-8000-000000000001": {
+                "bananaGain": 1.0787361,
+                "bananaValue": 0.0757900669522665,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 3,
+                "rewardedIntake": 0.3877900000000002,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000002": {
+                "bananaGain": 1.0919129,
+                "bananaValue": 0.08793112415541021,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 11,
+                "rewardedIntake": 0.4139200000000002,
+                "threatAssociations": 0
+              }
+            },
+            "pausedFrozen": true,
+            "rawSensoryPreserved": true,
+            "realtimeFactor": 5.02879751373994,
+            "remainingFood": 0.19829000000000352,
+            "residentBytes": 685162496,
+            "selectedMemoryIsolation": true,
+            "selectedTouchIsolation": true,
+            "simulatedSeconds": 30,
+            "targetedAdvanceIsolation": true
+          },
+          {
+            "brainCount": 4,
+            "consumedByIndividual": {
+              "00000000-0000-4000-8000-000000000001": 0.3878549999999982,
+              "00000000-0000-4000-8000-000000000002": 0.13569500000000378,
+              "00000000-0000-4000-8000-000000000003": 0.24465999999999877,
+              "00000000-0000-4000-8000-000000000004": 0.23178999999999939
+            },
+            "foodConserved": true,
+            "independentBrains": true,
+            "individualCount": 4,
+            "memoryIsolation": true,
+            "memoryStatsByIndividual": {
+              "00000000-0000-4000-8000-000000000001": {
+                "bananaGain": 1.0748837,
+                "bananaValue": 0.0722125163777213,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 2,
+                "rewardedIntake": 0.38785500000000017,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000002": {
+                "bananaGain": 1.0276834,
+                "bananaValue": 0.027307136944365602,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 8,
+                "rewardedIntake": 0.1356950000000037,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000003": {
+                "bananaGain": 1.0512377,
+                "bananaValue": 0.04996822291822542,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 23,
+                "rewardedIntake": 0.2446600000000001,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000004": {
+                "bananaGain": 1.0507927,
+                "bananaValue": 0.04954481200595132,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 8,
+                "rewardedIntake": 0.23179000000000005,
+                "threatAssociations": 0
+              }
+            },
+            "pausedFrozen": true,
+            "rawSensoryPreserved": true,
+            "realtimeFactor": 2.222223477362149,
+            "remainingFood": 0,
+            "residentBytes": 685162496,
+            "selectedMemoryIsolation": true,
+            "selectedTouchIsolation": true,
+            "simulatedSeconds": 30,
+            "targetedAdvanceIsolation": true
+          }
+        ],
+        "checks": {
+          "foodConservation": true,
+          "fourAgents": true,
+          "independentBrains": true,
+          "memoryIsolation": true,
+          "pausedFrozen": true,
+          "rawSensoryPreserved": true,
+          "selectedMemoryIsolation": true,
+          "selectedTouchIsolation": true,
+          "targetedAdvanceIsolation": true,
+          "twoAgents": true
+        },
+        "diagnostic": "population",
+        "schemaVersion": 1
+      }
+    },
+    "maleCNS": {
+      "status": "Imported, packaged, and verified: probe, 18-condition foraging, hunger cycle, associative learning, 2/4-individual population, and native GUI model switching",
+      "neurons": 166700,
+      "edges": 25582938,
+      "synapses": 124177617,
+      "foraging": {
+        "world": {
+          "height": 1400,
+          "initialFlyPosition": {
+            "x": 1024,
+            "y": 728
+          },
+          "initialFoodRemaining": 1,
+          "initialHeadingRadians": 0,
+          "width": 2560
+        },
+        "modelSeconds": 30,
+        "warmupSeconds": 0.5,
+        "distancesPixels": [
+          120,
+          220,
+          360
+        ],
+        "bearingsDegrees": [
+          0,
+          45,
+          -45,
+          90,
+          -90,
+          180
+        ],
+        "brainModel": "malecns",
+        "seed": 42,
+        "scope": "Fixed seed 42, 18 placements, one food, 30 model seconds; no guarantee for arbitrary placement or learned odor gains.",
+        "contacted": 18,
+        "consumed": 18,
+        "total": 18,
+        "blockedControlsMatchNoFood": true,
+        "blockedControlCount": 3,
+        "trials": [
+          {
+            "distancePixels": 120,
+            "bearingDegrees": 0,
+            "contactTimeSeconds": 1.9,
+            "minDistancePixels": 7.522019347864527,
+            "consumedFraction": 0.3900649999999971,
+            "trajectoryDigest": "ea810efd9215b16c"
+          },
+          {
+            "distancePixels": 120,
+            "bearingDegrees": 45,
+            "contactTimeSeconds": 2.766,
+            "minDistancePixels": 7.178944927382121,
+            "consumedFraction": 0.40514499999999687,
+            "trajectoryDigest": "2a60d8b79c1655ec"
+          },
+          {
+            "distancePixels": 120,
+            "bearingDegrees": -45,
+            "contactTimeSeconds": 2.466,
+            "minDistancePixels": 21.25748087155079,
+            "consumedFraction": 0.39649999999999697,
+            "trajectoryDigest": "d279591f92467b74"
+          },
+          {
+            "distancePixels": 120,
+            "bearingDegrees": 90,
+            "contactTimeSeconds": 3.633,
+            "minDistancePixels": 6.904828308359104,
+            "consumedFraction": 0.39649999999999697,
+            "trajectoryDigest": "c7c92e7b26f1fcdd"
+          },
+          {
+            "distancePixels": 120,
+            "bearingDegrees": -90,
+            "contactTimeSeconds": 29.666,
+            "minDistancePixels": 30.161808447214156,
+            "consumedFraction": 0.0173549999999999,
+            "trajectoryDigest": "1304d23235d86e05"
+          },
+          {
+            "distancePixels": 120,
+            "bearingDegrees": 180,
+            "contactTimeSeconds": 16.266,
+            "minDistancePixels": 23.342950212426253,
+            "consumedFraction": 0.42269499999999705,
+            "trajectoryDigest": "9a788470bbff9655"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": 0,
+            "contactTimeSeconds": 12.233,
+            "minDistancePixels": 10.149793531477895,
+            "consumedFraction": 0.4115799999999967,
+            "trajectoryDigest": "e89b2d09bc07db91"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": 45,
+            "contactTimeSeconds": 5.533,
+            "minDistancePixels": 24.35273555813312,
+            "consumedFraction": 0.40085499999999696,
+            "trajectoryDigest": "6d4cafcaaa090272"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": -45,
+            "contactTimeSeconds": 9.933,
+            "minDistancePixels": 16.192823973296548,
+            "consumedFraction": 0.4073549999999969,
+            "trajectoryDigest": "d0b57a2aab789414"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": 90,
+            "contactTimeSeconds": 18.233,
+            "minDistancePixels": 25.988257660243214,
+            "consumedFraction": 0.0021449999999999525,
+            "trajectoryDigest": "ff024749d108d150"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": -90,
+            "contactTimeSeconds": 16.266,
+            "minDistancePixels": 26.2184985087353,
+            "consumedFraction": 0.42678999999999667,
+            "trajectoryDigest": "13e5afc05fa8fb17"
+          },
+          {
+            "distancePixels": 220,
+            "bearingDegrees": 180,
+            "contactTimeSeconds": 23.3,
+            "minDistancePixels": 31.16303654870457,
+            "consumedFraction": 0.4094349999999968,
+            "trajectoryDigest": "ecc7efdaaba51827"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": 0,
+            "contactTimeSeconds": 16.566,
+            "minDistancePixels": 0.5422454570681903,
+            "consumedFraction": 0.4247099999999968,
+            "trajectoryDigest": "203ef3faf0a08850"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": 45,
+            "contactTimeSeconds": 22.566,
+            "minDistancePixels": 22.044536921302562,
+            "consumedFraction": 0.4397899999999966,
+            "trajectoryDigest": "84273b7da715f477"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": -45,
+            "contactTimeSeconds": 20.766,
+            "minDistancePixels": 13.158688303453943,
+            "consumedFraction": 0.42691999999999686,
+            "trajectoryDigest": "2e0d5d7a1aace64c"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": 90,
+            "contactTimeSeconds": 10.7,
+            "minDistancePixels": 7.918840760587987,
+            "consumedFraction": 0.41385499999999686,
+            "trajectoryDigest": "50ed512fa9f0b8fa"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": -90,
+            "contactTimeSeconds": 15,
+            "minDistancePixels": 10.82757899233434,
+            "consumedFraction": 0.41814499999999677,
+            "trajectoryDigest": "79f837cdd0459125"
+          },
+          {
+            "distancePixels": 360,
+            "bearingDegrees": 180,
+            "contactTimeSeconds": 28.433,
+            "minDistancePixels": 28.39609506063731,
+            "consumedFraction": 0.0867099999999994,
+            "trajectoryDigest": "74b8a602af4188d2"
+          }
+        ]
+      },
+      "hunger": {
+        "brainModel": "malecns",
+        "brainReceivesCoordinates": false,
+        "clearFoodBodyUnchanged": true,
+        "cyclesCompleted": true,
+        "finalHunger": 0.19825517900144105,
+        "firstFoodConsumed": 0.3944849999999972,
+        "firstFoodPosition": {
+          "x": 1144,
+          "y": 728
+        },
+        "firstFoodRemainingAtClear": 0.6055150000000028,
+        "initialFoodMotivated": true,
+        "initialHunger": 0.65,
+        "maxPNDuringHungry": 229.47584533691406,
+        "maxPNDuringSettledFull": 8.725142834009603e-06,
+        "milestones": [
+          {
+            "consumedFood": 0,
+            "foodDrive": 1,
+            "hunger": 0.65,
+            "name": "initial",
+            "remainingFood": 1,
+            "timeSeconds": 0
+          },
+          {
+            "consumedFood": 0.39013000000000014,
+            "foodDrive": 0,
+            "hunger": 0.19884699155904642,
+            "name": "firstFoodFull",
+            "remainingFood": 0.6098700000000028,
+            "timeSeconds": 8.3
+          },
+          {
+            "consumedFood": 0.39448500000000014,
+            "foodDrive": 0,
+            "hunger": 0.20437635585596003,
+            "name": "firstFoodClearedAfterFull",
+            "remainingFood": 0,
+            "timeSeconds": 13.3
+          },
+          {
+            "consumedFood": 0.39448500000000014,
+            "foodDrive": 1,
+            "hunger": 0.6000008603382312,
+            "name": "secondFoodPlacedAfterRecovery",
+            "remainingFood": 1,
+            "timeSeconds": 190.666
+          },
+          {
+            "consumedFood": 0.7432749999999982,
+            "foodDrive": 0,
+            "hunger": 0.19825517900144105,
+            "name": "secondFoodFull",
+            "remainingFood": 0.6512100000000027,
+            "timeSeconds": 198.866
+          }
+        ],
+        "modelSeconds": 198.866,
+        "movementDuringFullPixels": 181.2874312592443,
+        "recoveryDurationSeconds": 177.36599999999999,
+        "schemaVersion": 1,
+        "secondFoodConsumed": 0.34878999999999727,
+        "secondFoodPosition": {
+          "x": 587.7207165325337,
+          "y": 1044.406716223738
+        },
+        "secondMealCompletionSeconds": 8.200000000000017,
+        "seed": 42,
+        "sparseTrace": [
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.19726223684664676,
+            "phase": "settledFull",
+            "pnTotalHz": 0.0001074132596841082,
+            "position": {
+              "x": 1171.263473883264,
+              "y": 689.4122082092939
+            },
+            "remainingFood": 0.6055150000000028,
+            "timeSeconds": 10
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.21933791521025783,
+            "phase": "recovering",
+            "pnTotalHz": 4.877639694621823e-41,
+            "position": {
+              "x": 976.7963169619239,
+              "y": 1109.7709460370525
+            },
+            "remainingFood": 0,
+            "timeSeconds": 20
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.241630715966365,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 1193.9639851513216,
+              "y": 1169.983481157961
+            },
+            "remainingFood": 0,
+            "timeSeconds": 30
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.26395283454934476,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 974.907266614929,
+              "y": 706.5692658083631
+            },
+            "remainingFood": 0,
+            "timeSeconds": 40
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.28622887835475597,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 607.9874459571284,
+              "y": 992.581869832466
+            },
+            "remainingFood": 0,
+            "timeSeconds": 50
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.30867246391361375,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 961.7490317435424,
+              "y": 1369.695722652834
+            },
+            "remainingFood": 0,
+            "timeSeconds": 60
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.33095830303191526,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 1241.4820514234198,
+              "y": 955.0454834079197
+            },
+            "remainingFood": 0,
+            "timeSeconds": 70
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.3533668510424493,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 794.7185018028424,
+              "y": 1050.404372816648
+            },
+            "remainingFood": 0,
+            "timeSeconds": 80
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.37564682559248114,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 862.413248361967,
+              "y": 1198.9767259040839
+            },
+            "remainingFood": 0,
+            "timeSeconds": 90
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.39777018542874654,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 694.0943065807836,
+              "y": 765.9796495765563
+            },
+            "remainingFood": 0,
+            "timeSeconds": 100
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.4200443345169443,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 204.34705656787105,
+              "y": 846.0046052215075
+            },
+            "remainingFood": 0,
+            "timeSeconds": 110
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.44230853625504496,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 296.10177987049286,
+              "y": 1270.4600891901557
+            },
+            "remainingFood": 0,
+            "timeSeconds": 120
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.46459907949853263,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 716.9791244430162,
+              "y": 1003.2572897592981
+            },
+            "remainingFood": 0,
+            "timeSeconds": 130
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.48697844746085955,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 653.045304550087,
+              "y": 467.92208694601317
+            },
+            "remainingFood": 0,
+            "timeSeconds": 140
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.5092694116684889,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 208.92327674253667,
+              "y": 581.3619746226443
+            },
+            "remainingFood": 0,
+            "timeSeconds": 150
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.5315171286471125,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 425.02544629232403,
+              "y": 1016.4371493784034
+            },
+            "remainingFood": 0,
+            "timeSeconds": 160
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.5538757003388121,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 746.5456491221167,
+              "y": 683.6170933656952
+            },
+            "remainingFood": 0,
+            "timeSeconds": 170
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.5761770481386204,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 303.49548156038014,
+              "y": 606.651501343221
+            },
+            "remainingFood": 0,
+            "timeSeconds": 180
+          },
+          {
+            "activity": "flying",
+            "foodDrive": 0,
+            "hunger": 0.5985263479729617,
+            "phase": "recovering",
+            "pnTotalHz": 1.6535321879032841e-43,
+            "position": {
+              "x": 447.42479924872276,
+              "y": 1088.6543077859035
+            },
+            "remainingFood": 0,
+            "timeSeconds": 190
+          },
+          {
+            "activity": "feeding",
+            "foodDrive": 0,
+            "hunger": 0.19825517900144105,
+            "phase": "complete",
+            "pnTotalHz": 182.55059814453125,
+            "position": {
+              "x": 563.19786533216,
+              "y": 1061.8255341582667
+            },
+            "remainingFood": 0.6512100000000027,
+            "timeSeconds": 198.866
+          }
+        ],
+        "totalConsumed": 0.7432749999999982,
+        "world": {
+          "height": 1400,
+          "width": 2560
+        }
+      },
+      "learning": {
+        "bananaCueProbe": {
+          "averageFeedingHz": 10.03313700556755,
+          "averageForwardHz": 16.65830651919047,
+          "consumed": 0,
+          "contactFrames": 0,
+          "finalMemory": {
+            "bananaGain": 1.0940659,
+            "bananaValue": 0.08990095561377816,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 39.5614661853749,
+          "firstProbeNeuralDigest": 3.761412856305931,
+          "initialMemory": {
+            "bananaGain": 1.0950549,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 207.48683367024012,
+          "rawOdorAverage": 1.8399788366423713,
+          "rawSensoryPreserved": true,
+          "remaining": 1,
+          "simulatedSeconds": 6,
+          "weightedOdorAverage": 1.9604271623823377
+        },
+        "berryCueProbe": {
+          "averageFeedingHz": 23.338462420304616,
+          "averageForwardHz": 16.527141523361205,
+          "consumed": 0.24920999999999816,
+          "contactFrames": 121,
+          "finalMemory": {
+            "bananaGain": 1.0940659,
+            "bananaValue": 0.08990095561377816,
+            "berryGain": 1.061386,
+            "berryValue": 0.059575613618962554,
+            "learnedFood": 7,
+            "rewardedIntake": 0.6436950000000001,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 37.01888983672586,
+          "firstProbeNeuralDigest": 3.8032351217084064,
+          "initialMemory": {
+            "bananaGain": 1.0950549,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "kind": "berry",
+          "learningEnabled": true,
+          "pathDistance": 94.75313139108657,
+          "rawOdorAverage": 1.750668975379732,
+          "rawSensoryPreserved": true,
+          "remaining": 0.7507900000000018,
+          "simulatedSeconds": 6,
+          "weightedOdorAverage": 1.7819180945555368
+        },
+        "brainModel": "malecns",
+        "brainReceivesCoordinates": false,
+        "checks": {
+          "actualConsumption": true,
+          "actualFoodChoice": true,
+          "bananaCueDiffersFromBerryCue": true,
+          "disabledNeutral": true,
+          "foodGain": true,
+          "forgetting": true,
+          "graphResponseChanged": true,
+          "movementChanged": true,
+          "persistence": true,
+          "rawSensoryPreserved": true,
+          "reversal": true,
+          "twoFoodRawSensoryPreserved": true
+        },
+        "diagnostic": "learning",
+        "disabled": {
+          "averageFeedingHz": 19.60461526579327,
+          "averageForwardHz": 16.093385693762038,
+          "consumed": 0.394354999999997,
+          "contactFrames": 234,
+          "finalMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.788839999999998,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 37.01888983672586,
+          "firstProbeNeuralDigest": 3.8032351217084064,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": false,
+          "pathDistance": 203.4637697715628,
+          "rawOdorAverage": 1.4879865239063899,
+          "rawSensoryPreserved": true,
+          "remaining": 0.605645000000003,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.4879865239063899
+        },
+        "persistence": {
+          "encodedBytes": 298,
+          "equalAfterDecode": true,
+          "restoredProbeMovementDelta": 0,
+          "restoredProbeNeuralDelta": 0
+        },
+        "reversal": {
+          "foodConsumedDuringThreat": 0,
+          "forgottenGain": 0.9962056,
+          "forgottenValue": -0.0038016164147105964,
+          "reversedGain": 0.5688094,
+          "reversedValue": -0.5642099018034106,
+          "threatFrames": 240,
+          "trainedGain": 1.0950549,
+          "trainedValue": 0.09080447523872344
+        },
+        "schemaVersion": 1,
+        "trained": {
+          "averageFeedingHz": 13.67895040611426,
+          "averageForwardHz": 16.12775715721978,
+          "consumed": 0.13643499999999886,
+          "contactFrames": 74,
+          "finalMemory": {
+            "bananaGain": 1.1292249,
+            "bananaValue": 0.12153146775560227,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 9,
+            "rewardedIntake": 0.53092,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 39.5614661853749,
+          "firstProbeNeuralDigest": 3.761412856305931,
+          "initialMemory": {
+            "bananaGain": 1.0950549,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 349.01135565113947,
+          "rawOdorAverage": 1.7766963339514203,
+          "rawSensoryPreserved": true,
+          "remaining": 0.8635650000000011,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.920909614364306
+        },
+        "training": {
+          "averageFeedingHz": 14.193358778158824,
+          "averageForwardHz": 17.18456440925598,
+          "consumed": 0.3944849999999972,
+          "contactFrames": 243,
+          "finalMemory": {
+            "bananaGain": 1.0950549,
+            "bananaValue": 0.09080447523872344,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 6,
+            "rewardedIntake": 0.39448500000000014,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 37.01888983672586,
+          "firstProbeNeuralDigest": 3.8032351217084064,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": true,
+          "pathDistance": 1200.213216700847,
+          "rawOdorAverage": 0.8484223974309861,
+          "rawSensoryPreserved": true,
+          "remaining": 0.6055150000000028,
+          "simulatedSeconds": 30,
+          "weightedOdorAverage": 0.9014021782370077
+        },
+        "twoFoodBaseline": {
+          "bananaConsumed": 0.39656500000000033,
+          "berryConsumed": 0,
+          "firstConsumedKind": "banana",
+          "firstProbeMovement": 36.60513553951342,
+          "firstProbeNeuralDigest": 4.3865459889226095,
+          "learningEnabled": false,
+          "pathDistance": 1194.3965572667755,
+          "rawSensoryPreserved": true,
+          "remainingFood": 0.6034349999999997,
+          "simulatedSeconds": 30
+        },
+        "twoFoodChoice": {
+          "bananaConsumed": 0,
+          "berryConsumed": 0.41177500000000034,
+          "firstConsumedKind": "berry",
+          "firstProbeMovement": 39.67234931598652,
+          "firstProbeNeuralDigest": 6.020449953283167,
+          "learningEnabled": true,
+          "pathDistance": 1002.5863271033181,
+          "rawSensoryPreserved": true,
+          "remainingFood": 0.5882249999999998,
+          "simulatedSeconds": 30
+        },
+        "untrained": {
+          "averageFeedingHz": 19.60461526579327,
+          "averageForwardHz": 16.093385693762038,
+          "consumed": 0.394354999999997,
+          "contactFrames": 234,
+          "finalMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0.3943550000000002,
+            "threatAssociations": 0
+          },
+          "firstProbeMovement": 37.01888983672586,
+          "firstProbeNeuralDigest": 3.8032351217084064,
+          "initialMemory": {
+            "bananaGain": 1,
+            "bananaValue": 0,
+            "berryGain": 1,
+            "berryValue": 0,
+            "learnedFood": 0,
+            "rewardedIntake": 0,
+            "threatAssociations": 0
+          },
+          "kind": "banana",
+          "learningEnabled": false,
+          "pathDistance": 203.4637697715628,
+          "rawOdorAverage": 1.4879865239063899,
+          "rawSensoryPreserved": true,
+          "remaining": 0.605645000000003,
+          "simulatedSeconds": 12,
+          "weightedOdorAverage": 1.4879865239063899
+        }
+      },
+      "population": {
+        "brainModel": "malecns",
+        "brainReceivesCoordinates": false,
+        "cases": [
+          {
+            "brainCount": 2,
+            "consumedByIndividual": {
+              "00000000-0000-4000-8000-000000000001": 0.3877249999999969,
+              "00000000-0000-4000-8000-000000000002": 0.4094999999999994
+            },
+            "foodConserved": true,
+            "independentBrains": true,
+            "individualCount": 2,
+            "memoryIsolation": true,
+            "memoryStatsByIndividual": {
+              "00000000-0000-4000-8000-000000000001": {
+                "bananaGain": 1.0793891,
+                "bananaValue": 0.0763952343601117,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 9,
+                "rewardedIntake": 0.3877250000000002,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000002": {
+                "bananaGain": 1.0911727,
+                "bananaValue": 0.08725302693957264,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 1,
+                "rewardedIntake": 0.4095000000000002,
+                "threatAssociations": 0
+              }
+            },
+            "pausedFrozen": true,
+            "rawSensoryPreserved": true,
+            "realtimeFactor": 2.3602898231344343,
+            "remainingFood": 0.2027750000000037,
+            "residentBytes": 1261174784,
+            "selectedMemoryIsolation": true,
+            "selectedTouchIsolation": true,
+            "simulatedSeconds": 30,
+            "targetedAdvanceIsolation": true
+          },
+          {
+            "brainCount": 4,
+            "consumedByIndividual": {
+              "00000000-0000-4000-8000-000000000001": 0.39207999999999693,
+              "00000000-0000-4000-8000-000000000002": 0,
+              "00000000-0000-4000-8000-000000000003": 0.2547100000000037,
+              "00000000-0000-4000-8000-000000000004": 0.3532099999999995
+            },
+            "foodConserved": true,
+            "independentBrains": true,
+            "individualCount": 4,
+            "memoryIsolation": true,
+            "memoryStatsByIndividual": {
+              "00000000-0000-4000-8000-000000000001": {
+                "bananaGain": 1.0804697,
+                "bananaValue": 0.07739589524055383,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 5,
+                "rewardedIntake": 0.3920800000000002,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000002": {
+                "bananaGain": 1,
+                "bananaValue": 0,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 0,
+                "rewardedIntake": 0,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000003": {
+                "bananaGain": 1.0504688,
+                "bananaValue": 0.04923650197906212,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 1,
+                "rewardedIntake": 0.25471000000000354,
+                "threatAssociations": 0
+              },
+              "00000000-0000-4000-8000-000000000004": {
+                "bananaGain": 1.0746045,
+                "bananaValue": 0.0719526506441834,
+                "berryGain": 1,
+                "berryValue": 0,
+                "learnedFood": 2,
+                "rewardedIntake": 0.35321000000000013,
+                "threatAssociations": 0
+              }
+            },
+            "pausedFrozen": true,
+            "rawSensoryPreserved": true,
+            "realtimeFactor": 1.1860628502183137,
+            "remainingFood": 0,
+            "residentBytes": 1261174784,
+            "selectedMemoryIsolation": true,
+            "selectedTouchIsolation": true,
+            "simulatedSeconds": 30,
+            "targetedAdvanceIsolation": true
+          }
+        ],
+        "checks": {
+          "foodConservation": true,
+          "fourAgents": true,
+          "independentBrains": true,
+          "memoryIsolation": true,
+          "pausedFrozen": true,
+          "rawSensoryPreserved": true,
+          "selectedMemoryIsolation": true,
+          "selectedTouchIsolation": true,
+          "targetedAdvanceIsolation": true,
+          "twoAgents": true
+        },
+        "diagnostic": "population",
+        "schemaVersion": 1
+      },
+      "probe": {
+        "neurons": 166700,
+        "edges": 25582938,
+        "blockedMatchesBaseline": true,
+        "meanResponses": {
+          "baseline": {
+            "odorRelayLeftHz": 0,
+            "odorRelayRightHz": 0,
+            "feedingHz": 12.4102041,
+            "escapeHz": 0.0704357144
+          },
+          "blocked": {
+            "odorRelayLeftHz": 0,
+            "odorRelayRightHz": 0,
+            "feedingHz": 12.4102041,
+            "escapeHz": 0.0704357144
+          },
+          "fruitLeft": {
+            "odorRelayLeftHz": 37.9373244,
+            "odorRelayRightHz": 16.3089154,
+            "feedingHz": 6.40667856,
+            "escapeHz": 0.0704357144
+          },
+          "fruitRight": {
+            "odorRelayLeftHz": 39.9749125,
+            "odorRelayRightHz": 56.3455587,
+            "feedingHz": 6.39768713,
+            "escapeHz": 0.0704357144
+          },
+          "loom": {
+            "odorRelayLeftHz": 0,
+            "odorRelayRightHz": 0,
+            "feedingHz": 2.4863860979999997,
+            "escapeHz": 397.728672
+          },
+          "taste": {
+            "odorRelayLeftHz": 0,
+            "odorRelayRightHz": 0,
+            "feedingHz": 24.5457693,
+            "escapeHz": 0.0704357144
+          },
+          "touch": {
+            "odorRelayLeftHz": 0,
+            "odorRelayRightHz": 0,
+            "feedingHz": 12.4102041,
+            "escapeHz": 0.0704357144
+          }
+        },
+        "scope": "Direct input probe; Male touch does not increase escape readout in this protocol."
+      }
+    },
+    "nativeGUI": {
+      "dateKST": "2026-10-06",
+      "app": "dist/NeuroFly.app",
+      "mode": "native AppKit via CUA",
+      "checks": {
+        "defaultDesktopPetOnly": true,
+        "inspectorStartsAtTop": true,
+        "inspectorSectionAlignmentAt382px": true,
+        "arenaKeyboardShortcutCommandL": true,
+        "resetLabelDistinctFromResume": true,
+        "addSecondIndependentProfile": true,
+        "addThirdProfile": true,
+        "selectIndividual": true,
+        "selectedLearningToggleDoesNotChangeOther": true,
+        "switchFlyWireToMaleWithTwoProfiles": true,
+        "modelSwitchPreservesPauseAndLearningSettings": true,
+        "maleCountsVisible": [
+          166700,
+          25582938
+        ],
+        "quitRestartPreservesExactCheckpoint": true,
+        "maximumFourNativeUI": true,
+        "fifthAdditionDisabled": true,
+        "removeSelectedNativeUI": true,
+        "prepareControlsDisabled": true,
+        "startupShowsRestoredModelAndProfiles": true,
+        "switchMaleToFlyWireWithTwoProfiles": true,
+        "bothModelsPackagedAndSignatureVerified": true,
+        "wholeResetRecreatesBrainsAndResumesClock": true,
+        "returnToDesktopLeavesOnlyPets": true,
+        "switchBackToMaleWithTwoProfiles": true,
+        "finalBehaviorBundleRebuiltAndSigned": true,
+        "finalBundleMaleTwoProfilesRunning": true,
+        "finalInspectorClosedPetOnly": true
+      },
+      "notYetVerified": [],
+      "finalBundle": {
+        "version": "0.2.0",
+        "build": "2",
+        "machOUUID": "93806DDC-1AEE-31C0-B25D-D34645F953E6",
+        "sha256": "8793aaa1ecef424109c60bd3f93f204f1dc3b1cceb0cc65f73ceccae1b0c2f6f",
+        "codeSignature": "ad hoc, codesign --verify --deep --strict passed",
+        "runtime": "Male CNS, two restored profiles, neuron count 166700 and edge count 25582938, 1.00x live display, nonzero movement, inspector then closed"
+      }
+    },
+    "evidenceDatesKST": {
+      "unitTests": "2026-10-06",
+      "nativeGUI": "2026-10-06",
+      "flywireForagingAndLearning": "2026-10-06",
+      "flywireHungerAndPopulation": "2026-10-02",
+      "maleCNSAllHeadlessGates": "2026-10-06"
+    }
+  },
+  "review": {
+    "dateKST": "2026-10-06",
+    "scope": [
+      "persistence",
+      "transactional model replacement",
+      "actual-consumption rewards",
+      "individual state isolation",
+      "reset error recovery",
+      "arena coordinate scaling"
+    ],
+    "remainingBlockers": [],
+    "verificationGap": "Engine failure injection followed by reset/model recovery has not been exercised in an integration test; code review confirms the recovery path and normal GUI reset was exercised."
   }
 }

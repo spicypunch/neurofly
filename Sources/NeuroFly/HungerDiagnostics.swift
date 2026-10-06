@@ -5,7 +5,8 @@ extension NeuroFlyMain {
     static func runHungerDiagnostics() throws {
         let seed: UInt32 = 42
         let width = 2560.0, height = 1400.0
-        let brain = try BrainEngine(dataDirectory: DataLocator.directory(), seed: seed)
+        let model = try DataLocator.commandLineModel()
+        let brain = try BrainEngine(dataDirectory: DataLocator.directory(model: model), seed: seed, model: model)
         let calibration = try BrainCalibration.measure(brain: brain, seed: seed)
         try BrainCalibration.prepare(brain: brain, seed: seed)
 
@@ -47,7 +48,7 @@ extension NeuroFlyMain {
             let before = world.snapshot
             let raw = world.sense()
             let drive = before.body.foodDrive
-            let neural = try brain.advance(milliseconds: milliseconds, input: raw,
+            let neural = try brain.advance(milliseconds: milliseconds, input: world.neuralInput(),
                                             sensoryEnabled: before.sensoryEnabled,
                                             foodDrive: drive)
             let beforeRemaining = remainingFood()
@@ -113,7 +114,7 @@ extension NeuroFlyMain {
         }
 
         let report: [String: Any] = [
-            "schemaVersion": 1, "seed": seed, "modelSeconds": Double(simulatedMilliseconds) / 1000,
+            "schemaVersion": 1, "brainModel": brain.modelID, "seed": seed, "modelSeconds": Double(simulatedMilliseconds) / 1000,
             "world": ["width": width, "height": height],
             "initialHunger": 0.65, "initialFoodMotivated": true,
             "firstFoodPosition": point(firstPosition),

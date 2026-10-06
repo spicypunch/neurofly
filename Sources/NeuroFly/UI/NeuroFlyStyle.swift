@@ -1,5 +1,6 @@
 import AppKit
 import SpriteKit
+import NeuroFlyCore
 
 /// The small set of colors shared by the experiment window and the desktop pet.
 /// Keeping these in one place makes the UI readable without scattering magic NSColor values.
@@ -25,6 +26,31 @@ enum NeuroFlyStyle {
     static let skMint = SKColor(calibratedRed: 0.46, green: 0.83, blue: 0.69, alpha: 1)
     static let skCoral = SKColor(calibratedRed: 0.95, green: 0.44, blue: 0.36, alpha: 1)
     static let skOrange = SKColor(calibratedRed: 1.0, green: 0.63, blue: 0.24, alpha: 1)
+
+    /// Stable colors make individual flies easy to follow when several are
+    /// moving through the same arena. The palette is intentionally short;
+    /// population mode currently keeps the desktop pet readable at four.
+    static let individualColors: [NSColor] = [
+        NSColor(calibratedRed: 0.46, green: 0.83, blue: 0.69, alpha: 1),
+        NSColor(calibratedRed: 0.72, green: 0.56, blue: 0.98, alpha: 1),
+        NSColor(calibratedRed: 1.00, green: 0.63, blue: 0.24, alpha: 1),
+        NSColor(calibratedRed: 0.36, green: 0.72, blue: 0.95, alpha: 1)
+    ]
+
+    static let skIndividualColors: [SKColor] = [
+        SKColor(calibratedRed: 0.46, green: 0.83, blue: 0.69, alpha: 1),
+        SKColor(calibratedRed: 0.72, green: 0.56, blue: 0.98, alpha: 1),
+        SKColor(calibratedRed: 1.00, green: 0.63, blue: 0.24, alpha: 1),
+        SKColor(calibratedRed: 0.36, green: 0.72, blue: 0.95, alpha: 1)
+    ]
+
+    static func individualColor(ordinal: Int) -> NSColor {
+        individualColors[max(0, ordinal) % individualColors.count]
+    }
+
+    static func skIndividualColor(ordinal: Int) -> SKColor {
+        skIndividualColors[max(0, ordinal) % skIndividualColors.count]
+    }
 }
 
 enum ArenaTool: String, CaseIterable {
@@ -57,6 +83,26 @@ enum ArenaTool: String, CaseIterable {
     }
 }
 
+struct NeuroFlyIndividualRenderState {
+    let id: UUID
+    let ordinal: Int
+    let fly: FlyState
+    let isSelected: Bool
+}
+
+func neuroFlyRenderIndividuals(_ snapshot: WorldSnapshot, legacyID: UUID) -> [NeuroFlyIndividualRenderState] {
+    if snapshot.individuals.isEmpty {
+        return [NeuroFlyIndividualRenderState(id: legacyID, ordinal: 0,
+                                               fly: snapshot.fly, isSelected: true)]
+    }
+
+    let selectedID = snapshot.selectedIndividualID ?? snapshot.individuals.first?.id
+    return snapshot.individuals.map {
+        NeuroFlyIndividualRenderState(id: $0.id, ordinal: $0.ordinal, fly: $0.fly,
+                                      isSelected: $0.id == selectedID)
+    }
+}
+
 extension NSColor {
     convenience init(hex: UInt32, alpha: CGFloat = 1) {
         let red = CGFloat((hex >> 16) & 0xff) / 255
@@ -77,5 +123,21 @@ extension String {
 
     static func neuroFlyRate(_ value: Float) -> String {
         String(format: "%.2f Hz", value)
+    }
+}
+
+extension FoodKind {
+    var neuroFlyColor: NSColor {
+        switch self {
+        case .banana: return NeuroFlyStyle.orange
+        case .berry: return NeuroFlyStyle.plum
+        }
+    }
+
+    var neuroFlySKColor: SKColor {
+        switch self {
+        case .banana: return NeuroFlyStyle.skOrange
+        case .berry: return SKColor(calibratedRed: 0.72, green: 0.36, blue: 0.78, alpha: 1)
+        }
     }
 }

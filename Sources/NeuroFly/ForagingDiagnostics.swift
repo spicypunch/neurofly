@@ -40,6 +40,12 @@ private struct ForagingConfiguration {
             }
 
             switch name {
+            case "--model":
+                let raw = try Self.optionValue(name: name, inline: value,
+                                               arguments: arguments, index: &index)
+                guard BrainModel(rawValue: raw) != nil else {
+                    throw ForagingDiagnosticsError.invalidOption(name, raw)
+                }
             case "--foraging-seconds":
                 let raw = try Self.optionValue(name: name, inline: value,
                                                arguments: arguments, index: &index)
@@ -212,6 +218,7 @@ private struct ForagingTrialReport: Codable {
 
 private struct ForagingReport: Codable {
     let schemaVersion: Int
+    let brainModel: String
     let seed: UInt32
     let modelSeconds: Double
     let warmupSeconds: Double
@@ -299,7 +306,8 @@ private extension NeuralReadout {
 extension NeuroFlyMain {
     static func runForagingDiagnostics() throws {
         let configuration = try ForagingConfiguration(arguments: Array(CommandLine.arguments.dropFirst()))
-        let brain = try BrainEngine(dataDirectory: DataLocator.directory(), seed: configuration.seed)
+        let model = try DataLocator.commandLineModel()
+        let brain = try BrainEngine(dataDirectory: DataLocator.directory(model: model), seed: configuration.seed, model: model)
         let calibration = try BrainCalibration.measure(brain: brain, seed: configuration.seed)
 
         let noFoodExecution = try runForagingTrial(
@@ -373,6 +381,7 @@ extension NeuroFlyMain {
                                     height: configuration.height).snapshot.fly.position
         let report = ForagingReport(
             schemaVersion: 1,
+            brainModel: brain.modelID,
             seed: configuration.seed,
             modelSeconds: configuration.seconds,
             warmupSeconds: configuration.warmupSeconds,
@@ -459,7 +468,7 @@ extension NeuroFlyMain {
             let milliseconds = min(patternMilliseconds, durationMilliseconds - simulatedMilliseconds)
             let input = world.sense()
             let response = try brain.advance(milliseconds: milliseconds,
-                                              input: input,
+                                              input: world.neuralInput(),
                                               sensoryEnabled: world.snapshot.sensoryEnabled,
                                               foodDrive: world.snapshot.body.foodDrive)
             world.advance(neural: response, input: input,

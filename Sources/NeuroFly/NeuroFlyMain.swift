@@ -6,9 +6,20 @@ import NeuroFlyCore
 struct NeuroFlyMain {
     @MainActor static func main() {
         let args = CommandLine.arguments
-        if args.contains("--probe") || args.contains("--benchmark") || args.contains("--experiment") || args.contains("--foraging") || args.contains("--hunger") {
+        if args.contains("--help") || args.contains("-h") {
+            print("""
+            NeuroFly: launch without arguments for the desktop pet.
+            Diagnostics: --probe | --benchmark | --experiment | --foraging | --hunger | --learning | --population
+            Diagnostic model: --model flywire-v783 | --model malecns (default: flywire-v783)
+            Foraging options: --foraging-seconds N --foraging-distances 120,220,360 --foraging-bearings 0,45,-45,90,-90,180
+            """)
+            return
+        }
+        if ["--probe", "--benchmark", "--experiment", "--foraging", "--hunger", "--learning", "--population"].contains(where: args.contains) {
             do {
-                if args.contains("--hunger") { try runHungerDiagnostics() }
+                if args.contains("--learning") { try runLearningDiagnostics() }
+                else if args.contains("--population") { try runPopulationDiagnostics() }
+                else if args.contains("--hunger") { try runHungerDiagnostics() }
                 else if args.contains("--foraging") { try runForagingDiagnostics() }
                 else if args.contains("--experiment") { try runWorldExperiment() }
                 else { try runDiagnostics(benchmark: args.contains("--benchmark")) }
@@ -25,8 +36,9 @@ struct NeuroFlyMain {
     }
 
     static func runDiagnostics(benchmark: Bool) throws {
-        let brain = try BrainEngine(dataDirectory: DataLocator.directory(), seed: 42)
-        var result: [String: Any] = ["neurons": brain.neuronCount, "edges": brain.edgeCount,
+        let model = try DataLocator.commandLineModel()
+        let brain = try BrainEngine(dataDirectory: DataLocator.directory(model: model), seed: 42, model: model)
+        var result: [String: Any] = ["brainModel": brain.modelID, "neurons": brain.neuronCount, "edges": brain.edgeCount,
                                      "gpu": brain.gpuName, "mapping": brain.mappingSummary]
         if benchmark {
             let start = ProcessInfo.processInfo.systemUptime
@@ -65,8 +77,9 @@ struct NeuroFlyMain {
     }
 
     static func runWorldExperiment() throws {
-        let brain = try BrainEngine(dataDirectory: DataLocator.directory(), seed: 42)
-        var results: [String: Any] = [:]
+        let model = try DataLocator.commandLineModel()
+        let brain = try BrainEngine(dataDirectory: DataLocator.directory(model: model), seed: 42, model: model)
+        var results: [String: Any] = ["brainModel": brain.modelID]
         let calibration = try BrainCalibration.measure(brain: brain)
         results["calibration"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(calibration))
         for name in ["noFood", "foodLeft", "foodCenter", "foodRight", "foodBlocked"] {
@@ -86,7 +99,7 @@ struct NeuroFlyMain {
             for tick in 0..<900 {
                 let milliseconds = tick % 3 == 2 ? 34 : 33
                 let input = world.sense()
-                let response = try brain.advance(milliseconds: milliseconds, input: input,
+                let response = try brain.advance(milliseconds: milliseconds, input: world.neuralInput(),
                     sensoryEnabled: world.snapshot.sensoryEnabled, foodDrive: world.snapshot.body.foodDrive)
                 world.advance(neural: response, input: input, dt: Double(milliseconds) / 1000)
                 minDistance = min(minDistance, world.snapshot.fly.position.distance(to: target))

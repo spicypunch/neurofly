@@ -35,7 +35,8 @@ final class ArenaScene: SKScene {
     private let gridNode = SKNode()
     private let foodLayer = SKNode()
     private let effectLayer = SKNode()
-    private let flyNode = FlyNode()
+    private var flyNodes: [UUID: FlyNode] = [:]
+    private let legacyIndividualID = UUID()
     private let shadowNode = ShadowNode()
     private let statusPanel = SKShapeNode(rectOf: CGSize(width: 480, height: 72), cornerRadius: 14)
     private let statusLabel = SKLabelNode(fontNamed: "SFProRounded-Semibold")
@@ -80,9 +81,6 @@ final class ArenaScene: SKScene {
         addChild(effectLayer)
         effectLayer.zPosition = 3
         effectLayer.addChild(shadowNode)
-        addChild(flyNode)
-        flyNode.zPosition = 10
-
         fieldCaption.text = "CLOSED LOOP ARENA"
         fieldCaption.fontSize = 10
         fieldCaption.fontColor = NeuroFlyStyle.skCream.withAlphaComponent(0.54)
@@ -141,8 +139,8 @@ final class ArenaScene: SKScene {
             updateSceneSize()
         }
 
-        flyNode.apply(snapshot.fly, elapsed: snapshot.elapsed)
-        renderFoods(snapshot.foods)
+        renderFlies(snapshot)
+        renderFoods(snapshot)
         renderShadow(snapshot)
         renderStatus(snapshot)
     }
@@ -197,7 +195,8 @@ final class ArenaScene: SKScene {
         }
     }
 
-    private func renderFoods(_ foods: [FoodItem]) {
+    private func renderFoods(_ snapshot: WorldSnapshot) {
+        let foods = snapshot.foods
         let ids = Set(foods.map(\.id))
         for (id, node) in foodNodes where !ids.contains(id) {
             node.removeFromParent()
@@ -214,6 +213,41 @@ final class ArenaScene: SKScene {
                 foodLayer.addChild(node)
             }
             node.apply(food)
+            node.position = CGPoint(x: food.position.x / max(1, snapshot.width) * Double(size.width),
+                                    y: food.position.y / max(1, snapshot.height) * Double(size.height))
+        }
+    }
+
+    private func renderFlies(_ snapshot: WorldSnapshot) {
+        let individuals = neuroFlyRenderIndividuals(snapshot, legacyID: legacyIndividualID)
+        let ids = Set(individuals.map(\.id))
+        for (id, node) in flyNodes where !ids.contains(id) {
+            node.removeFromParent()
+            flyNodes.removeValue(forKey: id)
+        }
+
+        let showLabels = individuals.count > 1
+        let width = max(1, snapshot.width)
+        let height = max(1, snapshot.height)
+        for individual in individuals {
+            let node: FlyNode
+            if let existing = flyNodes[individual.id] {
+                node = existing
+            } else {
+                node = FlyNode()
+                flyNodes[individual.id] = node
+                addChild(node)
+            }
+            node.apply(individual.fly,
+                       elapsed: snapshot.elapsed,
+                       phaseOffset: Double(individual.ordinal) * 0.73,
+                       accent: NeuroFlyStyle.skIndividualColor(ordinal: individual.ordinal),
+                       selected: individual.isSelected,
+                       ordinal: individual.ordinal + 1,
+                       showIdentity: showLabels)
+            node.position = CGPoint(x: individual.fly.position.x / width * Double(size.width),
+                                    y: individual.fly.position.y / height * Double(size.height))
+            node.zPosition = individual.isSelected ? 12 : 10
         }
     }
 
@@ -223,15 +257,22 @@ final class ArenaScene: SKScene {
             return
         }
         shadowNode.isHidden = false
-        shadowNode.apply(position: position, strength: snapshot.shadowStrength, elapsed: snapshot.elapsed)
+        let scenePosition = Point2(x: position.x / max(1, snapshot.width) * Double(size.width),
+                                   y: position.y / max(1, snapshot.height) * Double(size.height))
+        shadowNode.apply(position: scenePosition, strength: snapshot.shadowStrength, elapsed: snapshot.elapsed)
     }
 
     private func renderStatus(_ snapshot: WorldSnapshot) {
         let hasError = snapshot.error != nil
         let isRunning = snapshot.isReady && !snapshot.isPaused
+        let individuals = neuroFlyRenderIndividuals(snapshot, legacyID: legacyIndividualID)
+        let selectedOrdinal = individuals.first(where: { $0.isSelected })?.ordinal ?? 0
+        let dataset = snapshot.brainModel.displayName
         statusLabel.text = snapshot.error == nil ? (snapshot.isPaused ? "일시정지" : (snapshot.isReady ? "신경망 연결됨" : "준비 중")) : "신경망을 확인하세요"
         statusLabel.fontColor = hasError ? NeuroFlyStyle.skCoral : (isRunning ? NeuroFlyStyle.skMint : NeuroFlyStyle.skCream)
-        statusDetailLabel.text = snapshot.error == nil ? snapshot.status : "로컬 모델을 불러오는 동안 문제가 발생했습니다"
+        statusDetailLabel.text = snapshot.error == nil
+            ? "\(dataset) · 선택 개체 #\(selectedOrdinal + 1) · 총 \(individuals.count)개 · \(snapshot.status)"
+            : "\(dataset) · 로컬 모델을 불러오는 동안 문제가 발생했습니다"
         errorLabel.text = snapshot.error.map { String($0.prefix(62)) } ?? ""
         statusPanel.strokeColor = hasError ? NeuroFlyStyle.skCoral.withAlphaComponent(0.64) : NeuroFlyStyle.skMint.withAlphaComponent(0.38)
         statusPanel.alpha = snapshot.isReady && snapshot.error == nil ? 0.78 : 1
@@ -256,6 +297,7 @@ final class ArenaScene: SKScene {
 /// A compact but recognizable fruit fly assembled entirely from vector SpriteKit nodes.
 final class FlyNode: SKNode {
     private let aura = SKShapeNode(circleOfRadius: 32)
+    private let selectionRing = SKShapeNode(circleOfRadius: 38)
     private let abdomen = SKShapeNode(ellipseOf: CGSize(width: 31, height: 19))
     private let thorax = SKShapeNode(ellipseOf: CGSize(width: 17, height: 17))
     private let head = SKShapeNode(ellipseOf: CGSize(width: 13, height: 13))
@@ -264,6 +306,7 @@ final class FlyNode: SKNode {
     private let leftWing = SKShapeNode()
     private let rightWing = SKShapeNode()
     private let proboscis = SKShapeNode()
+    private let identityLabel = SKLabelNode(fontNamed: "SFProRounded-Semibold")
     private var legs: [SKShapeNode] = []
     private var stripes: [SKShapeNode] = []
 
@@ -283,6 +326,12 @@ final class FlyNode: SKNode {
         aura.strokeColor = NeuroFlyStyle.skMint.withAlphaComponent(0.25)
         aura.lineWidth = 1
         addChild(aura)
+
+        selectionRing.fillColor = .clear
+        selectionRing.strokeColor = NeuroFlyStyle.skMint.withAlphaComponent(0.78)
+        selectionRing.lineWidth = 1.4
+        selectionRing.isHidden = true
+        addChild(selectionRing)
 
         abdomen.position = CGPoint(x: -5, y: 0)
         abdomen.fillColor = SKColor(calibratedRed: 0.24, green: 0.15, blue: 0.12, alpha: 1)
@@ -356,16 +405,37 @@ final class FlyNode: SKNode {
                 addChild(leg)
             }
         }
+
+        identityLabel.fontSize = 10
+        identityLabel.horizontalAlignmentMode = .center
+        identityLabel.verticalAlignmentMode = .center
+        identityLabel.position = CGPoint(x: 0, y: -41)
+        identityLabel.isHidden = true
+        addChild(identityLabel)
     }
 
-    func apply(_ state: FlyState, elapsed: Double) {
+    func apply(_ state: FlyState, elapsed: Double, phaseOffset: Double = 0,
+               accent: SKColor = NeuroFlyStyle.skMint, selected: Bool = false,
+               ordinal: Int = 1, showIdentity: Bool = false) {
         position = CGPoint(x: state.position.x, y: state.position.y)
         zRotation = state.heading
+
+        let accentColor = accent.withAlphaComponent(1)
+        selectionRing.isHidden = !selected
+        selectionRing.strokeColor = accentColor.withAlphaComponent(0.92)
+        aura.strokeColor = accentColor.withAlphaComponent(selected ? 0.52 : 0.25)
+        aura.fillColor = accentColor.withAlphaComponent(selected ? 0.10 : 0.05)
+        abdomen.strokeColor = accentColor.withAlphaComponent(selected ? 0.90 : 0.45)
+        thorax.strokeColor = accentColor.withAlphaComponent(selected ? 0.95 : 0.52)
+        identityLabel.text = "\(ordinal)"
+        identityLabel.zRotation = -zRotation
+        identityLabel.fontColor = accentColor.withAlphaComponent(selected ? 1 : 0.78)
+        identityLabel.isHidden = !showIdentity
 
         let speed = max(0, min(state.speed / 240, 1))
         let active = state.activity == .flying || state.activity == .escaping
         let flapRate = active ? 20 + speed * 28 : 5 + speed * 8
-        let flap = CGFloat(sin(elapsed * Double(flapRate)))
+        let flap = CGFloat(sin((elapsed + phaseOffset) * Double(flapRate)))
         // +X is the head. Wings extend toward -X from the thorax; keep their
         // visible sweep in the rear/lateral quadrants instead of over the head.
         let spread: CGFloat = active ? 0.55 + flap * 0.20 : -0.12
@@ -476,6 +546,11 @@ final class FoodNode: SKNode {
 
     func apply(_ food: FoodItem) {
         position = CGPoint(x: food.position.x, y: food.position.y)
+        let foodColor = food.kind.neuroFlySKColor
+        aura.fillColor = foodColor.withAlphaComponent(0.10)
+        aura.strokeColor = foodColor.withAlphaComponent(0.42)
+        fruit.fillColor = foodColor
+        leaf.fillColor = food.kind == .berry ? NeuroFlyStyle.skCream : NeuroFlyStyle.skMint
         let remaining = CGFloat(max(0.42, min(1, food.remaining)))
         alpha = remaining
         aura.xScale = 0.86 + remaining * 0.14

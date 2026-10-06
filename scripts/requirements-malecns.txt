@@ -1,0 +1,4 @@
+# Isolated build-time dependencies for scripts/fetch-malecns.py.
+# Python 3.10+; pyarrow is used to stream official Feather batches.
+numpy>=1.26,<3
+pyarrow>=15,<26

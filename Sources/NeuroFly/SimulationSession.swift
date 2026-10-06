@@ -22,91 +22,242 @@ final class SimulationSession {
         self.runtime = runtime
         runtime.start()
     }
-    func stop() { generation &+= 1; runtime?.stop(); runtime = nil }
+    func stop() {
+        generation &+= 1
+        runtime?.stop()
+        runtime = nil
+    }
     func perform(_ action: UserAction) { runtime?.perform(action) }
     func resize(width: Double, height: Double) { runtime?.resize(width: width, height: height) }
 }
 
-/// Owns every mutable simulation object on a dedicated serial queue.
+/// Each member owns a complete, independent neural state. One serial queue
+/// advances them against the shared food supply and publishes a whole frame.
 private final class SimulationRuntime: @unchecked Sendable {
     private let queue = DispatchQueue(label: "live.neurofly.brain", qos: .userInitiated)
     private let update: @Sendable (WorldSnapshot) -> Void
-    private var brain: BrainEngine?
-    private var calibration: BrainCalibration?
-    private var world = SimulationWorld()
+    private var brains: [UUID: BrainEngine] = [:]
+    private var calibrations: [String: BrainCalibration] = [:]
+    private var population = PopulationWorld()
     private var timer: DispatchSourceTimer?
     private var errorMessage: String?
     private var status = "실제 연결 데이터를 확인하는 중…"
+    private var persistenceWarning: String?
+    private var saveWarning: String?
+    private var persistenceEnabled = true
+    private var availableModels: [BrainModel] = []
+    private var isPreparing = false
     private var frameNumber = 0
     private var intervalStart = ProcessInfo.processInfo.systemUptime
     private var intervalSimulated: Double = 0
     private var realtimeFactor: Double = 0
+    private var lastSaveTime: Double = 0
+    private let store: ColonyStore
 
-    init(update: @escaping @Sendable (WorldSnapshot) -> Void) { self.update = update }
+    init(update: @escaping @Sendable (WorldSnapshot) -> Void) {
+        self.update = update
+        let root: URL
+        if let explicit = ProcessInfo.processInfo.environment["NEUROFLY_STATE_DIR"] {
+            root = URL(fileURLWithPath: explicit, isDirectory: true)
+        } else {
+            root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("NeuroFly", isDirectory: true)
+        }
+        store = ColonyStore(url: root.appendingPathComponent("colony-v1.json"))
+    }
 
     func start() {
         queue.async { [self] in
             publish()
             do {
-                brain = try BrainEngine(dataDirectory: DataLocator.directory(), seed: 42)
-                status = "좌우 신경 반응을 보정하는 중…"
-                publish()
-                try calibrate()
-                status = "먹이나 자극을 놓아 반응을 살펴보세요."
-                intervalStart = ProcessInfo.processInfo.systemUptime
-                let source = DispatchSource.makeTimerSource(queue: queue)
-                source.schedule(deadline: .now(), repeating: .nanoseconds(33_333_333), leeway: .milliseconds(2))
-                source.setEventHandler { [weak self] in self?.tick() }
-                timer = source
-                source.resume()
+                let available = DataLocator.availableModels
+                availableModels = available
+                var archive: ColonyArchive?
+                do {
+                    archive = try store.load()
+                } catch {
+                    // A broken checkpoint remains recoverable on disk.
+                    do {
+                        _ = try store.preserveUnreadableArchive()
+                        persistenceWarning = "읽지 못한 기억 파일을 보관하고 새로 시작했습니다."
+                    } catch {
+                        persistenceEnabled = false
+                        persistenceWarning = "기억 파일을 읽지 못해 이번 실행의 자동 저장을 중단했습니다."
+                    }
+                }
+                let model = archive.map { available.contains($0.brainModel) ? $0.brainModel : DataLocator.preferredModel }
+                    ?? DataLocator.preferredModel
+                if let archive, archive.brainModel != model {
+                    persistenceWarning = "저장된 뇌 데이터가 없어 \(model.displayName)으로 시작했습니다. 기억은 유지합니다."
+                }
+                var candidate = PopulationWorld(profiles: archive?.profiles ?? [], brainModel: model,
+                                                availableBrainModels: available)
+                if let selected = archive?.selectedIndividualID { candidate.selectIndividual(selected) }
+                // Startup has no running engines to replace. Expose the
+                // restored identities/model while loading, and retain them
+                // for error recovery if engine preparation fails.
+                population = candidate
+                try installBrains(model: model, into: &candidate)
+                population = candidate
+                status = "먹이와 자극으로 각 개체의 반응과 기억을 살펴보세요."
+                startTimer()
+                save()
                 publish()
             } catch { fail(error) }
         }
     }
 
-    func stop() { queue.async { [self] in timer?.cancel(); timer = nil; brain = nil } }
-
-    func resize(width: Double, height: Double) {
-        queue.async { [self] in world.resize(width: width, height: height); publish() }
+    /// Flush the small checkpoint before AppKit finishes application teardown.
+    /// No main-queue work is awaited by the simulation queue.
+    func stop() {
+        queue.sync { [self] in
+            timer?.cancel(); timer = nil
+            save()
+            brains.removeAll()
+        }
     }
 
-    func perform(_ action: UserAction) {
+    func resize(width: Double, height: Double) {
         queue.async { [self] in
-            world.perform(action)
-            if case .reset = action {
-                do {
-                    try calibrate()
-                    frameNumber = 0
-                    intervalSimulated = 0
-                    intervalStart = ProcessInfo.processInfo.systemUptime
-                } catch { fail(error) }
-            }
-            if case .togglePause = action {
-                intervalSimulated = 0
-                intervalStart = ProcessInfo.processInfo.systemUptime
-            }
+            population.resize(width: width, height: height)
             publish()
         }
     }
 
-    private func calibrate() throws {
-        guard let brain else { return }
-        if calibration == nil { calibration = try BrainCalibration.measure(brain: brain) }
-        else { try BrainCalibration.prepare(brain: brain) }
-        if let calibration { world.calibrate(calibration) }
+    func perform(_ action: UserAction) {
+        queue.async { [self] in
+            do {
+                switch action {
+                case .switchBrainModel(let model):
+                    availableModels = DataLocator.availableModels
+                    guard availableModels.contains(model) else {
+                        throw BrainEngineError.invalidData("\(model.displayName) 데이터가 준비되지 않았습니다.")
+                    }
+                    guard model != population.brainModel || errorMessage != nil else { return }
+                    var candidate = population
+                    candidate.setAvailableBrainModels(availableModels)
+                    try installBrains(model: model, into: &candidate)
+                    candidate.perform(action)
+                    population = candidate
+                    errorMessage = nil
+                    status = "\(model.displayName)으로 전환했습니다. 개체별 기억은 유지됩니다."
+                    startTimer()
+                case .addIndividual:
+                    guard errorMessage == nil,
+                          population.individualCount < PopulationWorld.maximumIndividuals else { return }
+                    var candidate = population
+                    candidate.perform(action)
+                    guard let profile = candidate.profiles.first(where: { brains[$0.id] == nil }) else { return }
+                    status = "새 개체의 신경망을 준비하는 중…"
+                    publish()
+                    let brain = try makeBrain(profile: profile, model: population.brainModel, world: &candidate)
+                    brains[profile.id] = brain
+                    candidate.selectIndividual(profile.id)
+                    population = candidate
+                    status = "개체 #\(profile.ordinal + 1) 추가 완료"
+                    resetTiming()
+                case .removeSelectedIndividual:
+                    let previousCount = population.individualCount
+                    population.perform(action)
+                    let keep = Set(population.individualIDs)
+                    brains = brains.filter { keep.contains($0.key) }
+                    if population.individualCount < previousCount {
+                        status = "선택한 개체를 제거했습니다. 현재 \(population.individualCount)개입니다."
+                    }
+                case .reset:
+                    var candidate = population
+                    candidate.perform(action)
+                    try installBrains(model: population.brainModel, into: &candidate)
+                    population = candidate
+                    frameNumber = 0
+                    errorMessage = nil
+                    startTimer()
+                    status = "모든 개체의 몸 상태와 기억을 초기화했습니다."
+                default:
+                    population.perform(action)
+                    if case .togglePause = action { resetTiming() }
+                }
+                save()
+                publish()
+            } catch {
+                // Add/model replacement is transactional. Keep the old colony
+                // running if a replacement could not be allocated or loaded.
+                status = "요청을 적용하지 못했습니다: \(error.localizedDescription)"
+                publish()
+            }
+        }
+    }
+
+    private func calibrationKey(model: BrainModel, seed: UInt32) -> String {
+        "\(model.rawValue):\(seed)"
+    }
+
+    private func makeBrain(profile: IndividualProfile, model: BrainModel,
+                           world: inout PopulationWorld) throws -> BrainEngine {
+        isPreparing = true
+        defer { isPreparing = false }
+        status = "\(model.displayName) · 개체 \(profile.ordinal + 1)의 신경망을 준비하는 중…"
+        publish()
+        let brain = try BrainEngine(dataDirectory: DataLocator.directory(model: model), seed: profile.seed, model: model)
+        let key = calibrationKey(model: model, seed: profile.seed)
+        let calibration: BrainCalibration
+        if let cached = calibrations[key] {
+            calibration = cached
+        } else {
+            status = "\(model.displayName) · 개체 \(profile.ordinal + 1)의 좌우 반응을 보정하는 중…"
+            publish()
+            calibration = try BrainCalibration.measure(brain: brain, seed: profile.seed)
+            calibrations[key] = calibration
+        }
+        try BrainCalibration.prepare(brain: brain, seed: profile.seed)
+        world.calibrate(calibration, for: profile.id)
+        return brain
+    }
+
+    private func installBrains(model: BrainModel, into candidate: inout PopulationWorld) throws {
+        var replacement: [UUID: BrainEngine] = [:]
+        for profile in candidate.profiles {
+            replacement[profile.id] = try makeBrain(profile: profile, model: model, world: &candidate)
+        }
+        // Commit only after every required independent engine is ready.
+        brains = replacement
+        resetTiming()
+    }
+
+    private func startTimer() {
+        if timer == nil {
+            let source = DispatchSource.makeTimerSource(queue: queue)
+            source.schedule(deadline: .now(), repeating: .nanoseconds(33_333_333), leeway: .milliseconds(2))
+            source.setEventHandler { [weak self] in self?.tick() }
+            timer = source
+            source.resume()
+        }
+        resetTiming()
+    }
+
+    private func resetTiming() {
+        intervalSimulated = 0
+        realtimeFactor = 0
+        intervalStart = ProcessInfo.processInfo.systemUptime
     }
 
     private func tick() {
-        guard let brain, errorMessage == nil, !world.snapshot.isPaused else { return }
+        guard errorMessage == nil, !population.snapshot.isPaused else { return }
         do {
-            // 33, 33, 34 ms: exactly one second of model time per 30 frames.
             let milliseconds = frameNumber % 3 == 2 ? 34 : 33
             frameNumber += 1
-            let input = world.sense()
-            let rates = try brain.advance(milliseconds: milliseconds, input: input,
-                                          sensoryEnabled: world.snapshot.sensoryEnabled,
-                                          foodDrive: world.snapshot.body.foodDrive)
-            world.advance(neural: rates, input: input, dt: Double(milliseconds) / 1000)
+            for id in population.individualIDs {
+                guard let brain = brains[id],
+                      let individual = population.snapshot.individuals.first(where: { $0.id == id }) else {
+                    throw BrainEngineError.invalidData("an individual has no independent brain")
+                }
+                let raw = population.sense(id)
+                let rates = try brain.advance(milliseconds: milliseconds, input: population.neuralInput(id),
+                                              sensoryEnabled: population.snapshot.sensoryEnabled,
+                                              foodDrive: individual.body.foodDrive)
+                population.advance(id, neural: rates, input: raw, dt: Double(milliseconds) / 1000)
+            }
+            population.refresh()
             intervalSimulated += Double(milliseconds) / 1000
             let now = ProcessInfo.processInfo.systemUptime
             let elapsed = now - intervalStart
@@ -114,22 +265,38 @@ private final class SimulationRuntime: @unchecked Sendable {
                 realtimeFactor = intervalSimulated / elapsed
                 intervalSimulated = 0; intervalStart = now
             }
+            if now - lastSaveTime >= 5 { save() }
             publish()
         } catch { fail(error) }
     }
 
+    private func save() {
+        guard persistenceEnabled, !brains.isEmpty else { return }
+        do {
+            try store.save(ColonyArchive(brainModel: population.brainModel,
+                                        selectedIndividualID: population.selectedIndividualID,
+                                        profiles: population.profiles))
+            lastSaveTime = ProcessInfo.processInfo.systemUptime
+            saveWarning = nil
+        } catch {
+            saveWarning = "기억을 저장하지 못했습니다: \(error.localizedDescription)"
+        }
+    }
+
     private func fail(_ error: Error) {
         errorMessage = error.localizedDescription
-        status = "신경망을 실행할 수 없습니다."
+        status = "신경망을 실행할 수 없습니다. 다른 준비된 뇌 모델을 선택할 수 있습니다."
         timer?.cancel(); timer = nil
         publish()
     }
 
     private func publish() {
-        var frame = world.snapshot
-        frame.isReady = brain != nil && errorMessage == nil && timer != nil
+        var frame = population.snapshot
+        frame.isReady = !brains.isEmpty && errorMessage == nil && timer != nil && !isPreparing
         frame.error = errorMessage
-        frame.status = status
+        frame.status = ([status] + [persistenceWarning, saveWarning].compactMap { $0 }).joined(separator: " ")
+        frame.availableBrainModels = availableModels
+        let brain = brains[population.selectedIndividualID]
         frame.neuronCount = brain?.neuronCount ?? 0
         frame.edgeCount = brain?.edgeCount ?? 0
         frame.realtimeFactor = realtimeFactor

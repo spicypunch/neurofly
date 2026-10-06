@@ -10,24 +10,37 @@ public final class BrainEngine {
     public let edgeCount: Int
     public let gpuName: String
     public let mappingSummary: [String: String]
+    public let modelID: String
+    public let modelName: String
+    public let model: BrainModel
 
     private let queue: DispatchQueue
     private let queueKey = DispatchSpecificKey<UInt8>()
     private let state: MetalBrainSimulation
 
-    public init(dataDirectory: URL, seed: UInt32 = 42) throws {
-        let loaded = try loadConnectome(dataDirectory: dataDirectory)
+    public init(dataDirectory: URL, seed: UInt32 = 42,
+                model: BrainModel = .flywireV783) throws {
+        let loaded = try loadConnectome(dataDirectory: dataDirectory, model: model)
         let simulation = try MetalBrainSimulation(connectome: loaded, seed: seed)
         state = simulation
         neuronCount = simulation.neuronCount
         edgeCount = simulation.edgeCount
         gpuName = simulation.gpuName
         mappingSummary = simulation.mappingSummary
+        modelID = loaded.modelID
+        modelName = loaded.modelName
+        self.model = model
 
         let serialQueue = DispatchQueue(label: "com.neurofly.brain.serial",
                                          qos: .userInitiated)
         queue = serialQueue
         serialQueue.setSpecific(key: queueKey, value: 1)
+    }
+
+    /// Convenience overload for callers that select a model before a seed.
+    public convenience init(dataDirectory: URL, model: BrainModel,
+                            seed: UInt32 = 42) throws {
+        try self.init(dataDirectory: dataDirectory, seed: seed, model: model)
     }
 
     /// Advances the connectome by a fixed number of one-millisecond steps.

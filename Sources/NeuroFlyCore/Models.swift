@@ -78,8 +78,55 @@ public struct FoodItem: Codable, Equatable, Identifiable, Sendable {
     public var id: UUID
     public var position: Point2
     public var remaining: Double
-    public init(id: UUID = UUID(), position: Point2, remaining: Double = 1) {
-        self.id = id; self.position = position; self.remaining = remaining
+    public var kind: FoodKind
+    public init(id: UUID = UUID(), position: Point2, remaining: Double = 1,
+                kind: FoodKind = .banana) {
+        self.id = id; self.position = position; self.remaining = remaining; self.kind = kind
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, position, remaining, kind }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        position = try container.decodeIfPresent(Point2.self, forKey: .position) ?? Point2()
+        remaining = try container.decodeIfPresent(Double.self, forKey: .remaining) ?? 1
+        kind = try container.decodeIfPresent(FoodKind.self, forKey: .kind) ?? .banana
+    }
+}
+
+/// A renderable and inspectable state for one simulated individual.
+///
+/// `SimulationWorld` remains the single-individual API used by the headless
+/// diagnostics. Population mode carries this smaller per-individual view in
+/// the enclosing `WorldSnapshot` while keeping food and other environmental
+/// objects shared.
+public struct IndividualSnapshot: Codable, Equatable, Sendable, Identifiable {
+    public var id: UUID
+    public var ordinal: Int
+    public var seed: UInt32
+    public var fly: FlyState
+    public var body: BodyState
+    public var sensory: SensoryInput
+    public var neural: NeuralReadout
+    public var motor: MotorCommand
+    public var memory: FlyMemory
+
+    public init(id: UUID = UUID(), ordinal: Int = 0, seed: UInt32 = 42,
+                fly: FlyState = FlyState(), body: BodyState = BodyState(),
+                sensory: SensoryInput = SensoryInput(),
+                neural: NeuralReadout = NeuralReadout(),
+                motor: MotorCommand = MotorCommand(),
+                memory: FlyMemory = FlyMemory()) {
+        self.id = id
+        self.ordinal = ordinal
+        self.seed = seed
+        self.fly = fly
+        self.body = body
+        self.sensory = sensory
+        self.neural = neural
+        self.motor = motor
+        self.memory = memory
     }
 }
 
@@ -94,6 +141,7 @@ public struct WorldSnapshot: Codable, Sendable {
     public var neural = NeuralReadout()
     public var motor = MotorCommand()
     public var body = BodyState()
+    public var memory = FlyMemory()
     public var elapsed: Double = 0
     public var isPaused = false
     public var sensoryEnabled = true
@@ -103,15 +151,32 @@ public struct WorldSnapshot: Codable, Sendable {
     public var neuronCount = 0
     public var edgeCount = 0
     public var realtimeFactor: Double = 0
+    /// Population mode fills this array in stable ordinal order. The legacy
+    /// top-level fly/body/sensory/neural/motor fields mirror the selected
+    /// individual so existing single-fly UI and diagnostics remain usable.
+    public var individuals: [IndividualSnapshot] = []
+    public var selectedIndividualID: UUID? = nil
+    public var brainModel: BrainModel = .flywireV783
+    public var availableBrainModels: [BrainModel] = [.flywireV783]
+    public var learningEnabled = true
     public init() {}
 }
 
 public enum UserAction: Sendable {
     case placeFood(Point2)
+    case placeFoodKind(Point2, FoodKind)
     case castShadow(Point2)
     case touchFly
     case clearFood
     case togglePause
     case toggleSensory
     case reset
+    // Population controls. A single SimulationWorld ignores these cases so
+    // existing diagnostics can keep using the same action type.
+    case addIndividual
+    case removeSelectedIndividual
+    case selectIndividual(UUID)
+    case toggleLearning
+    case clearMemory
+    case switchBrainModel(BrainModel)
 }

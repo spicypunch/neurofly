@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-/// Errors raised while loading the shipped FlyWire-derived graph.
+/// Errors raised while loading a real connectome graph.
 public enum BrainEngineError: Error, LocalizedError, CustomStringConvertible, Sendable {
     case invalidArgument(String)
     case missingData(URL)
@@ -46,6 +46,37 @@ struct ConnectomeManifest: Decodable {
         let cellTypes: [String]
     }
 
+    struct DatasetMetadata: Decodable {
+        let id: String?
+        let displayName: String?
+        let version: String?
+        let source: String?
+    }
+
+    /// Every ID must be present in the graph's `rootId` array. A dataset ETL
+    /// may preserve source body IDs there when the source has no FlyWire root
+    /// IDs; the loader still resolves all groups against one neuron table.
+    /// Optional fields allow legacy FlyWire manifests to omit this section;
+    /// once the section is present it is validated as a complete mapping.
+    struct NeuralMapping: Decodable {
+        let odorLeft: [UInt64]?
+        let odorRight: [UInt64]?
+        let odorRelayLeft: [UInt64]?
+        let odorRelayRight: [UInt64]?
+        let taste: [UInt64]?
+        let loomingLeft: [UInt64]?
+        let loomingRight: [UInt64]?
+        let touch: [UInt64]?
+        let turnLeft: [UInt64]?
+        let turnRight: [UInt64]?
+        let forward: [UInt64]?
+        let escape: [UInt64]?
+        let feeding: [UInt64]?
+        let grooming: [UInt64]?
+        let flightLeft: [UInt64]?
+        let flightRight: [UInt64]?
+    }
+
     let format: String
     let neuronCount: Int
     let edgeCount: Int
@@ -55,6 +86,43 @@ struct ConnectomeManifest: Decodable {
     let stringTables: StringTables
     let roleCounts: [String: Int]
     let modulatoryNts: [String]
+    let dataset: DatasetMetadata?
+    let neuralMapping: NeuralMapping?
+}
+
+/// Root-ID mapping resolved to validated neuron-array indices before Metal is
+/// touched. This keeps dataset-specific identity out of the simulator's
+/// heuristic legacy FlyWire mapper.
+struct ValidatedNeuralMapping {
+    let odorLeft: [Int]
+    let odorRight: [Int]
+    let odorRelayLeft: [Int]
+    let odorRelayRight: [Int]
+    let taste: [Int]
+    let loomingLeft: [Int]
+    let loomingRight: [Int]
+    let touch: [Int]
+    let turnLeft: [Int]
+    let turnRight: [Int]
+    let forward: [Int]
+    let escape: [Int]
+    let feeding: [Int]
+    let grooming: [Int]
+    let flightLeft: [Int]
+    let flightRight: [Int]
+
+    var groups: [(String, [Int])] {
+        [
+            ("odorLeft", odorLeft), ("odorRight", odorRight),
+            ("odorRelayLeft", odorRelayLeft), ("odorRelayRight", odorRelayRight),
+            ("taste", taste), ("loomingLeft", loomingLeft),
+            ("loomingRight", loomingRight), ("touch", touch),
+            ("turnLeft", turnLeft), ("turnRight", turnRight),
+            ("forward", forward), ("escape", escape), ("feeding", feeding),
+            ("grooming", grooming), ("flightLeft", flightLeft),
+            ("flightRight", flightRight),
+        ]
+    }
 }
 
 /// Validated graph data. Edge arrays stay in `Data` so Metal can copy them
@@ -77,6 +145,11 @@ struct LoadedConnectome {
     let roleNames: [String]
     let cellTypeNames: [String]
     let modulatoryNts: Set<String>
+    let modelID: String
+    let modelName: String
+    let datasetVersion: String?
+    let datasetSource: String?
+    let neuralMapping: ValidatedNeuralMapping?
 
     var cellTypeName: [String] {
         cellType.map { index in
@@ -191,10 +264,138 @@ private func rawArrayData(_ info: ConnectomeManifest.ArrayInfo,
     return file.subdata(in: info.byteOffset..<(info.byteOffset + bytes))
 }
 
+/// Validates the model identity before any large graph binary is opened. This
+/// is intentionally internal so the manifest contract can be tested without
+/// allocating a Metal simulation or a full Male CNS fixture.
+func validateDatasetSelection(dataset: ConnectomeManifest.DatasetMetadata?,
+                              neuralMapping: ConnectomeManifest.NeuralMapping?,
+                              model: BrainModel,
+                              selectedDirectory: URL) throws {
+    if let datasetID = dataset?.id {
+        guard !datasetID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw BrainEngineError.invalidData("dataset.id must not be empty")
+        }
+        guard datasetID == model.rawValue else {
+            throw BrainEngineError.invalidData(
+                "manifest dataset.id " + datasetID + " does not match selected model " + model.rawValue)
+        }
+    }
+    if let displayName = dataset?.displayName {
+        guard !displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw BrainEngineError.invalidData("dataset.displayName must not be empty")
+        }
+    }
+    if model == .maleCNS {
+        guard dataset?.id == model.rawValue else {
+            throw BrainEngineError.invalidData(
+                "Male CNS requires dataset.id malecns")
+        }
+    }
+    guard model != .maleCNS || neuralMapping != nil else {
+        throw BrainEngineError.invalidData(
+            "Male CNS requires an explicit neuralMapping; legacy role/type guessing is disabled")
+    }
+}
+
+func validateNeuralMapping(_ raw: ConnectomeManifest.NeuralMapping,
+                           rootIDs: [UInt64], model: BrainModel) throws -> ValidatedNeuralMapping {
+    let fields: [(String, [UInt64]?)] = [
+        ("odorLeft", raw.odorLeft), ("odorRight", raw.odorRight),
+        ("odorRelayLeft", raw.odorRelayLeft), ("odorRelayRight", raw.odorRelayRight),
+        ("taste", raw.taste), ("loomingLeft", raw.loomingLeft),
+        ("loomingRight", raw.loomingRight), ("touch", raw.touch),
+        ("turnLeft", raw.turnLeft), ("turnRight", raw.turnRight),
+        ("forward", raw.forward), ("escape", raw.escape),
+        ("feeding", raw.feeding), ("grooming", raw.grooming),
+        ("flightLeft", raw.flightLeft), ("flightRight", raw.flightRight),
+    ]
+    // A declared mapping is all-or-nothing. This prevents a partially known
+    // Male CNS annotation from silently falling through to FlyWire heuristics.
+    guard fields.allSatisfy({ $0.1 != nil }) else {
+        let missing = fields.filter { $0.1 == nil }.map(\.0).joined(separator: ", ")
+        throw BrainEngineError.invalidData(model.displayName + " neuralMapping is missing: " + missing)
+    }
+    guard fields.allSatisfy({ !($0.1 ?? []).isEmpty }) else {
+        let empty = fields.filter { ($0.1 ?? []).isEmpty }.map(\.0).joined(separator: ", ")
+        throw BrainEngineError.invalidData(model.displayName + " neuralMapping is empty: " + empty)
+    }
+
+    var indexByRootID: [UInt64: Int] = [:]
+    indexByRootID.reserveCapacity(rootIDs.count)
+    for (index, rootID) in rootIDs.enumerated() {
+        guard indexByRootID.updateValue(index, forKey: rootID) == nil else {
+            throw BrainEngineError.invalidData("rootId contains duplicate neuron ID " + String(rootID))
+        }
+    }
+    var used: [Int: String] = [:]
+    func resolve(_ name: String, _ IDs: [UInt64]) throws -> [Int] {
+        var indices: [Int] = []
+        indices.reserveCapacity(IDs.count)
+        var local = Set<Int>()
+        for rootID in IDs {
+            guard let index = indexByRootID[rootID] else {
+                throw BrainEngineError.invalidData(
+                    model.displayName + " neuralMapping " + name +
+                    " references unknown root ID " + String(rootID))
+            }
+            guard local.insert(index).inserted else {
+                throw BrainEngineError.invalidData(
+                    model.displayName + " neuralMapping " + name +
+                    " contains duplicate root ID " + String(rootID))
+            }
+            if let previous = used[index] {
+                throw BrainEngineError.invalidData(
+                    model.displayName + " neuralMapping overlaps " + previous + " and " + name +
+                    " at root ID " + String(rootID))
+            }
+            used[index] = name
+            indices.append(index)
+        }
+        return indices
+    }
+    let values = try fields.map { (name, optionalIDs) in
+        guard let IDs = optionalIDs else {
+            throw BrainEngineError.invalidData(model.displayName + " neuralMapping is missing: " + name)
+        }
+        return (name, try resolve(name, IDs))
+    }
+    func value(_ name: String) -> [Int] {
+        values.first(where: { $0.0 == name })?.1 ?? []
+    }
+    return ValidatedNeuralMapping(
+        odorLeft: value("odorLeft"), odorRight: value("odorRight"),
+        odorRelayLeft: value("odorRelayLeft"), odorRelayRight: value("odorRelayRight"),
+        taste: value("taste"), loomingLeft: value("loomingLeft"),
+        loomingRight: value("loomingRight"), touch: value("touch"),
+        turnLeft: value("turnLeft"), turnRight: value("turnRight"),
+        forward: value("forward"), escape: value("escape"),
+        feeding: value("feeding"), grooming: value("grooming"),
+        flightLeft: value("flightLeft"), flightRight: value("flightRight"))
+}
+
 /// Loads and validates the real graph. Every structural and digest check is
 /// performed before the returned edge bytes are exposed to Metal.
 func loadConnectome(dataDirectory: URL) throws -> LoadedConnectome {
-    let manifestURL = dataDirectory.appendingPathComponent("connectome.json", isDirectory: false)
+    try loadConnectome(dataDirectory: dataDirectory, model: .flywireV783)
+}
+
+func loadConnectome(dataDirectory: URL, model: BrainModel) throws -> LoadedConnectome {
+    let nestedDirectory = model.dataSubdirectory.isEmpty
+        ? dataDirectory
+        : dataDirectory.appendingPathComponent(model.dataSubdirectory, isDirectory: true)
+    // Accept a direct model directory as well as a shared root. The engine's
+    // default locator passes the shared root, while fixture tests often pass a
+    // model directory directly. Male CNS still requires its explicit mapping,
+    // so a FlyWire root cannot be mistaken for a Male CNS graph.
+    let selectedDirectory: URL
+    if FileManager.default.fileExists(atPath: nestedDirectory.appendingPathComponent("connectome.json").path) {
+        selectedDirectory = nestedDirectory
+    } else if FileManager.default.fileExists(atPath: dataDirectory.appendingPathComponent("connectome.json").path) {
+        selectedDirectory = dataDirectory
+    } else {
+        selectedDirectory = nestedDirectory
+    }
+    let manifestURL = selectedDirectory.appendingPathComponent("connectome.json", isDirectory: false)
     guard FileManager.default.fileExists(atPath: manifestURL.path) else {
         throw BrainEngineError.missingData(manifestURL)
     }
@@ -217,6 +418,10 @@ func loadConnectome(dataDirectory: URL) throws -> LoadedConnectome {
     guard manifest.byteOrder == "little" else {
         throw BrainEngineError.invalidData("only little-endian data is supported")
     }
+    try validateDatasetSelection(dataset: manifest.dataset,
+                                 neuralMapping: manifest.neuralMapping,
+                                 model: model,
+                                 selectedDirectory: selectedDirectory)
     guard manifest.neuronCount > 0, manifest.edgeCount > 0 else {
         throw BrainEngineError.invalidData("neuron and edge counts must be positive")
     }
@@ -230,7 +435,7 @@ func loadConnectome(dataDirectory: URL) throws -> LoadedConnectome {
         guard name.isSafeRelativeFileName else {
             throw BrainEngineError.invalidData("unsafe data file name \(name)")
         }
-        let url = dataDirectory.appendingPathComponent(name, isDirectory: false)
+        let url = selectedDirectory.appendingPathComponent(name, isDirectory: false)
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw BrainEngineError.missingData(url)
         }
@@ -351,6 +556,12 @@ func loadConnectome(dataDirectory: URL) throws -> LoadedConnectome {
         }
     }
 
+    let validatedMapping = try manifest.neuralMapping.map {
+        try validateNeuralMapping($0, rootIDs: rootId, model: model)
+    }
+    let datasetID = manifest.dataset?.id ?? model.rawValue
+    let datasetName = manifest.dataset?.displayName ?? model.displayName
+
     return LoadedConnectome(
         neuronCount: n,
         edgeCount: e,
@@ -368,5 +579,10 @@ func loadConnectome(dataDirectory: URL) throws -> LoadedConnectome {
         ntNames: manifest.stringTables.nts,
         roleNames: manifest.stringTables.roles,
         cellTypeNames: manifest.stringTables.cellTypes,
-        modulatoryNts: Set(manifest.modulatoryNts))
+        modulatoryNts: Set(manifest.modulatoryNts),
+        modelID: datasetID,
+        modelName: datasetName,
+        datasetVersion: manifest.dataset?.version,
+        datasetSource: manifest.dataset?.source,
+        neuralMapping: validatedMapping)
 }

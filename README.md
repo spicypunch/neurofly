@@ -2,281 +2,257 @@
 
 <img src="docs/assets/neurofly-banner.svg" alt="NeuroFly — A little fly. A real connectome." width="100%" />
 
-### 화면 위를 날아다니는, 작은 신경망 실험실
+### 바탕화면 위의 작은 초파리, 실제 연결 데이터로 움직이는 신경망
 
-실제 초파리의 **신경 연결 데이터**로 활동을 계산하고,<br />
-먹이와 자극에 대한 반응을 바탕화면 속 작은 몸체에 연결합니다.
+먹이를 놓고, 반응을 관찰하고, 개체마다 쌓이는 기억을 살펴보세요.<br />
+**FlyWire · Male CNS · Metal · macOS**
 
-<img alt="Platform: macOS 15+" src="https://img.shields.io/badge/macOS-15%2B-172D25?style=flat-square&amp;logo=apple&amp;logoColor=EDE7CF" />
+<img alt="macOS 15 이상" src="https://img.shields.io/badge/macOS-15%2B-172D25?style=flat-square&amp;logo=apple&amp;logoColor=white" />
 <img alt="Swift tools 6.0" src="https://img.shields.io/badge/Swift_tools-6.0-EA805C?style=flat-square&amp;logo=swift&amp;logoColor=white" />
-<img alt="Compute: Metal" src="https://img.shields.io/badge/Compute-Metal-284D3F?style=flat-square" />
-<img alt="Data: FlyWire v783" src="https://img.shields.io/badge/Data-FlyWire_v783-416653?style=flat-square" />
-<img alt="Data license: CC BY-NC 4.0" src="https://img.shields.io/badge/Data_license-CC_BY--NC_4.0-B99355?style=flat-square" />
+<img alt="Metal GPU compute" src="https://img.shields.io/badge/Compute-Metal-284D3F?style=flat-square" />
+<img alt="독립 개체 1–4마리" src="https://img.shields.io/badge/Pets-1–4-416653?style=flat-square" />
 
-[빠른 시작](#빠른-시작) · [사용하기](#사용하기) · [뇌에서 움직임까지](#뇌에서-움직임까지) · [검증](#검증) · [출처](#출처와-이용-조건)
+[빠른 시작](#빠른-시작) · [사용하기](#사용하기) · [어떻게 움직이나요](#어떻게-움직이나요) · [검증](#검증) · [데이터와 이용 조건](#데이터와-이용-조건)
 
 </div>
 
 ---
 
-## 작은 펫, 관찰할 수 있는 반응
+## 작은 펫, 관찰할 수 있는 뇌 반응
 
-큰 창을 계속 열어둘 필요 없이, 바탕화면 위에 초파리 한 마리가 떠 있습니다.
-메뉴 막대의 **🪰**에서 먹이를 놓거나 그림자를 만들고, **상태 보기**를 열어
-그 순간의 감각 입력과 뉴런 활동을 함께 살펴볼 수 있습니다.
+**NeuroFly**는 실제 초파리의 신경 연결 지도인 *커넥톰*을 이용하는 독립 macOS 데스크톱 펫입니다.
+큰 창 없이 바탕화면에서 실행되고, 평소에는 클릭을 아래 앱으로 통과시킵니다.
+먹이와 자극을 배치할 때만 클릭을 받으며, 상태 창과 실험실은 필요할 때 열 수 있습니다.
 
-| 🍊 먹이 놓기 | 🌘 자극 주기 | 🧠 상태 보기 |
-| :--- | :--- | :--- |
-| 냄새를 감지하고, 접촉하면 단맛 입력을 받습니다. | 다가오는 그림자와 접촉 자극에 대한 출력을 관찰합니다. | 감각·뉴런·몸체 출력과 허기·먹이 반응·누적 섭취를 함께 봅니다. |
+| 기능 | 해볼 수 있는 일 |
+| :--- | :--- |
+| 🍌 **먹이 탐색** | 바나나·베리를 놓고 냄새 감지 → 신경 반응 → 이동 → 섭식 과정을 관찰합니다. |
+| 🌘 **자극과 반응** | 그림자·접촉 자극을 주거나 감각 입력을 꺼서 신경 출력의 차이를 비교합니다. |
+| 🍽️ **배고픔과 포만** | 먹은 양만큼 허기가 줄고, 시간이 지나 다시 먹이를 찾는 주기를 관찰합니다. |
+| 🧠 **먹이 기억** | 실제 섭취·최근 위협과 냄새 단서의 연합, 시간에 따른 망각을 관찰합니다. |
+| 🪰 **최대 4개체** | 독립된 신경망·몸체·기억을 가진 펫들이 같은 먹이와 환경을 공유합니다. |
+| 🔬 **두 연결 지도** | FlyWire v783과 Male CNS v1.0을 전환하고 선택 개체의 상태를 확인합니다. |
 
 <table>
 <tr>
-<td width="44%" align="center" valign="top">
-<img src="docs/assets/neural-status.png" alt="NeuroFly 상태 창 예시. 냄새, 단맛, 그림자, 접촉 입력과 뉴런 발화율을 표시한다." width="280" />
-<br /><sub>상태 창 예시 · 기존 캡처</sub>
+<td width="42%" align="center" valign="top">
+<img src="docs/assets/neural-status.png" alt="초기 버전의 NeuroFly 상태 창: 감각 입력, 후각 중계, 운동 뉴런 발화율" width="280" />
+<br /><sub>초기 버전의 상태 창 예시</sub>
 </td>
 <td valign="top">
 
-### 펫 뒤에서 일어나는 일
+### 움직임 뒤의 신호를 직접 보기
 
-**139,255개 뉴런**과 **15,091,983개 방향성 연결**을 사용하는 네트워크를 Mac에서 계산합니다.
+상태 창에서는 다음을 함께 볼 수 있습니다.
 
-- **감각 입력** — 가상 더듬이의 냄새, 단맛, 그림자, 접촉
-- **후각 중계** — 연결망을 통과한 좌우 DM1_lPN 활동
-- **운동 출력** — 전진·선회·회피·섭식에 사용하는 뉴런 활동
-- **몸체 반응** — 신경 출력으로 정한 이동 속도·선회·활동 상태
-- **몸 상태** — 시간에 따른 허기, 먹이 반응, 누적 섭취량
-- **감각 입력 연결** — 같은 자극에서 입력을 끄고 차이를 관찰하는 스위치
+- **감각 입력** — 몸 기준 좌우 냄새, 단맛, 그림자, 접촉
+- **후각 중계** — 연결망을 통과한 DM1_lPN 뉴런의 활동
+- **운동 출력** — 선회·전진·회피·섭식 관련 뉴런의 발화율
+- **몸 상태** — 실제 속도·선회, 허기·누적 섭취량
+- **먹이 기억** — 바나나·베리 연합값과 입력에 적용되는 gain
+- **개체와 모델** — 관찰 대상, 학습 설정, 현재 연결 지도
 
-배치할 때만 화면 클릭을 받아들이고, 평소에는 아래 앱으로 클릭을 통과시킵니다.
-상태 창을 닫아도 펫은 계속 실행됩니다.
+왼쪽 사진은 초기 버전입니다. 현재 상태 창에는 개체·모델 선택과 허기·기억 항목이 추가되어 있습니다.
 
 </td>
 </tr>
 </table>
 
-> **모델의 범위**
-> NeuroFly는 실제 연결 그래프에 단순화한 신경 계산과 2D 몸체를 붙인 실험용 펫입니다.
-> 생물의 뇌 전체나 실제 비행을 완전히 재현한 모델은 아닙니다.
-> Codex 내장 펫과 별도로 실행하는 독립 macOS 앱입니다.
+> **어떤 시뮬레이션인가요?**
+> 실제 연결 그래프에 단순화한 신경 계산과 2D 몸체를 결합한 실험입니다.
+> 허기·연합 기억·감각 입력 변환·운동 해석에는 앱에서 설계한 규칙이 들어갑니다.
+> 생물의 뇌 전체나 실제 비행을 완전히 재현한 모델은 아니며, Codex 내장 펫과 별도로 실행합니다.
 
 ## 빠른 시작
 
 ### 준비물
 
-| | 요구 사항 |
+| 항목 | 요구 사항 |
 | :--- | :--- |
-| 앱 실행 | Apple Silicon Mac · macOS 15 이상 |
-| 소스 빌드 | Swift 6 도구가 포함된 Xcode 또는 Command Line Tools |
-| 데이터 준비 | Python 3 · 최초 다운로드 시 인터넷 연결 |
-
-저장소를 내려받고 프로젝트 폴더에서 실행합니다.
+| Mac | macOS 15 이상 · Metal 지원 GPU · Apple Silicon에서 검증 |
+| 빌드 도구 | Swift 6 도구가 포함된 Xcode 또는 Command Line Tools |
+| 데이터 준비 | Python 3.11 권장(검증 환경) · 최초 다운로드를 위한 인터넷 연결 |
 
 ```sh
 git clone https://github.com/spicypunch/neurofly.git
 cd neurofly
 
-# 1. 고정된 버전의 연결 데이터 다운로드 · 약 95 MB
+# FlyWire 고정 데이터 다운로드 · 약 95 MB
 python3 scripts/fetch-data.py
 
-# 2. 실행 가능한 macOS 앱 빌드
-./scripts/build-app.sh
+# Male CNS 공식 원본 다운로드·검증·변환 · 원본 약 1.1 GB
+python3.11 -m venv .venv-malecns
+.venv-malecns/bin/python -m pip install -r scripts/requirements-malecns.txt
+.venv-malecns/bin/python scripts/fetch-malecns.py --import
 
-# 3. 바탕화면 펫 실행
+# 두 모델을 포함한 macOS 앱 빌드·실행
+./scripts/build-app.sh
 open dist/NeuroFly.app
 ```
 
-스크립트는 데이터의 크기와 SHA-256을 확인합니다. 이미 올바른 파일이 있으면 다시 받지 않습니다.
-완성된 `NeuroFly.app`에는 데이터가 포함되므로 **실행 중에는 Python과 인터넷이 필요 없습니다.**
-로그인 시 자동 실행은 등록하지 않습니다.
+- **데이터 바이너리와 빌드된 앱은 Git에 포함되지 않습니다.** 위 명령으로 내려받거나 생성합니다.
+- 다운로드 스크립트는 고정된 크기와 SHA-256을 확인하고, 이미 검증된 파일은 재사용합니다.
+- 앱 빌드는 **두 모델의 데이터가 모두 준비된 상태**를 요구합니다.
+- 완성된 앱에는 실행에 필요한 데이터가 포함됩니다. **앱 실행 중에는 Python과 인터넷이 필요 없습니다.**
+- 로컬 빌드는 ad hoc 서명입니다. Apple 공증 배포본은 아니며, 로그인 시 자동 실행도 등록하지 않습니다.
+
+Male CNS 원본 파일·변환 규칙·재현 절차는 [데이터 준비 안내](scripts/README-malecns.md)에 있습니다.
 
 ## 사용하기
 
-**메뉴 막대 🪰 → 원하는 동작 선택**
+**메뉴 막대의 🪰에서 시작하세요.**
 
-| 메뉴 | 동작 |
+| 하고 싶은 일 | 방법 |
 | :--- | :--- |
-| **먹이 놓기** | 화면의 위치를 클릭해 먹이를 놓습니다. 최대 8개까지 유지합니다. |
-| **그림자 드리우기** | 클릭한 위치에 커지는 그림자 자극을 만듭니다. |
-| **건드리기** | 다음 클릭으로 초파리에 접촉 자극을 보냅니다. |
-| **상태 보기** | 감각 입력·뉴런 발화율·몸체 출력·허기·먹이 반응을 보여줍니다. |
-| **일시정지 / 다시 시작** | 신경 계산과 몸체 움직임을 멈추거나 재개합니다. |
-| **초기화 / 먹이 치우기** | 초기화는 허기 65%·누적 섭취 0의 기본 상태로 되돌립니다. 먹이 치우기는 몸 상태를 유지합니다. |
-| **펫 숨기기 / 보이기** | 바탕화면 표시를 전환합니다. 숨겨도 계산은 계속됩니다. |
-| **실험실 열기** | 필요할 때만 별도의 실험창을 엽니다. 닫으면 펫으로 돌아옵니다. |
-| **NeuroFly 종료** | 펫과 시뮬레이션을 종료합니다. |
+| 먹이 놓기 | 바나나 또는 베리를 선택하고 화면의 위치를 클릭합니다. 최대 8개까지 놓을 수 있습니다. |
+| 그림자·접촉 자극 | `그림자 드리우기` 또는 `건드리기`를 선택한 뒤 클릭합니다. 접촉은 선택 개체에 적용됩니다. |
+| 상태 보기 | 상태 창에서 관찰할 개체와 뇌 모델을 고릅니다. |
+| 개체 늘리기·줄이기 | 개체를 추가하거나 선택한 개체를 제거합니다. 1–4마리를 유지합니다. |
+| 학습 비교 | 선택 개체의 `먹이 기억 학습`을 끄면 입력 gain이 중립값 1이 됩니다. 저장된 연합값은 유지됩니다. |
+| 기억 초기화 | 선택 개체의 기억만 지우거나, `전체 초기화`로 모든 개체의 몸 상태·허기·기억과 환경을 초기화합니다. |
+| 먹이 치우기 | 배치된 먹이를 제거합니다. 몸 상태와 기억은 유지됩니다. |
+| 잠시 멈추기 | `일시정지`로 신경 계산과 몸체 진행을 함께 멈춥니다. 펫을 숨기기만 하면 계산은 계속됩니다. |
+| 실험실 열기 | 별도 실험창에서 관찰합니다. 창을 닫으면 바탕화면 펫으로 돌아갑니다. |
 
-**배치 취소는 `Esc`.** 위치를 클릭한 뒤에는 자동으로 클릭 통과 상태로 돌아갑니다.
+| 단축키 | 동작 |
+| :---: | :--- |
+| `⌘B` | 상태 창 열기 |
+| `⌘L` | 실험실 열기 |
+| `⌘D` | 데스크톱 모드 |
+| `⌘P` | 일시정지 / 다시 시작 |
+| `⌘Q` | NeuroFly 종료 |
+| `Esc` | 먹이·자극 배치 취소 |
 
-## 뇌에서 움직임까지
+### 저장되는 것
+
+모델 선택, 개체 ID·seed, 선택 개체, 학습 설정과 기억을
+`~/Library/Application Support/NeuroFly/colony-v1.json`에 저장합니다.
+재실행하면 기억은 복원되고, 몸체는 허기 65%와 빈 환경에서 시작합니다.
+먹이 위치·몸 상태·뉴런 막전압·시뮬레이션 시계는 저장하지 않습니다.
+
+모델을 전환할 때는 기존 환경·몸체·기억을 유지하고 새 신경망을 준비합니다.
+준비에 실패하면 기존 개체군을 유지합니다. 저장된 모델 선택이 없는 첫 실행은 Male CNS를 우선 사용하며,
+CLI 진단의 기본 모델은 FlyWire입니다.
+
+## 어떻게 움직이나요?
 
 ```text
-화면의 먹이 · 그림자 · 접촉
-             │
-             ▼
-      가상 감각 수용기 신호
-      (냄새·단맛·그림자·접촉)
-             │
-             ▼
-       냄새·단맛 입력 adapter ◄──── foodDrive
-             │                    ▲
-             ▼                    │
-  FlyWire 연결 그래프 + Metal LIF 계산  가상 몸 상태 허기
-             │                    (시간·섭취량으로 갱신)
-             ▼
-       측정된 뉴런 발화율
-             │
-             ▼
-      MotorDecoder (뉴런 출력만)
-             │
-             ▼
-       초파리의 다음 움직임
-             ├─────────── 다음 감각 입력으로 이어짐
-             └─────────── 시간·섭취량을 몸 상태에 반영
+화면의 먹이·자극
+    ↓
+가상 감각 수용기 → 허기에 따른 냄새·단맛 조절 + 기억에 따른 냄새 조절
+    ↓
+선택한 커넥톰 + Metal 신경 계산
+    ↓
+뉴런 발화율 → 운동 해석 → 화면 속 몸체 이동
+    ↑                         ↓
+    └──── 다음 감각 입력 · 실제 섭취로 이어지는 반복 ────┘
 ```
 
-허기는 운동 변환 뒤의 뉴런 출력에 적용되지 않습니다. `foodDrive`가 냄새·단맛 입력 adapter만
-조절하고, 그림자·접촉 입력은 그대로 둡니다. 운동을 계산하는 `MotorDecoder`는 **뉴런 출력만 받습니다.**
-먹이의 좌표나 목적지는 받지 않습니다.
-먹이는 냄새장과 접촉 미각을 통해 신경망에 영향을 주고, 그 결과가 몸체로 전달됩니다.
-화면 경계와의 충돌은 별도의 물리 규칙으로 처리합니다.
+Metal GPU에서 1ms 단계의 **leaky integrate-and-fire** 모델을 계산합니다.
+운동을 해석하는 `MotorDecoder`는 뉴런 출력과 그 이력을 사용하며, **먹이 좌표나 목적지를 받지 않습니다.**
+먹이는 냄새와 접촉 미각을 통해 신경망에 영향을 주고, 화면 경계는 별도의 물리 규칙으로 처리합니다.
 
-<details>
-<summary><strong>데이터와 모델 자세히 보기</strong></summary>
+### 허기와 기억
 
-| 구성 | 현재 구현 |
-| :--- | :--- |
-| 연결 지도 | FlyWire FAFB v783 · 뉴런 **139,255개** |
-| 그래프 | 방향성 연결 **15,091,983개** · 집계 시냅스 **54,492,922개** |
-| 신경 계산 | Metal에서 1ms 단계로 실행하는 leaky integrate-and-fire 모델 |
-| 냄새 입력 adapter | 좌우 ORN_DM1에 `sqrt(mean)` 크기와 좌우 대비 10배를 적용하고, 수용기 입력을 최대 **0.22**로 제한 |
-| 냄새 중계 | 좌우 ORN_DM1 입력 → 그래프를 통과한 DM1_lPN 중계 활동 측정 |
-| 단맛 | v783에 존재하는 원논문 sugar GRN 20개 → CB0701/MN9 출력 |
-| 그림자 | LC4/LPLC2 경로에 입력 → Giant Fiber 회피 출력 |
-| 선회 | 5개 농도 × 3개 좌우 대비, 총 15개 PN probe의 실측 발화율 lookup으로 방향을 해석 |
-| 몸체 | AppKit 투명 창 + SpriteKit의 간단한 2D 캐릭터 |
-| 몸 상태 | 허기 0.65에서 시작 · 속도에 따라 증가 · 실제 섭취량의 1.2배만큼 감소 · 0.20/0.60 hysteresis |
+- **허기**는 시간에 따라 증가하고 실제 섭취량에 따라 감소합니다. 20% 이하에서 먹이 입력을 줄이고,
+  60% 이상으로 회복되면 다시 활성화합니다. 그림자·접촉 입력에는 이 조절을 적용하지 않습니다.
+- **연합 기억**은 실제로 먹은 양을 양의 보상으로 사용합니다. 냄새나 단맛만으로 보상이 생기지 않습니다.
+  최근 위협은 냄새 단서의 연합값을 낮추고, 기억은 시간에 따라 약해집니다.
+- 기억은 **냄새 입력의 gain을 바꾸는 앱 수준 모델**입니다. 커넥톰의 시냅스 가중치를 학습으로 수정하지 않습니다.
+- 개체마다 신경 상태·몸체·기억이 분리됩니다. 공유 먹이는 실제로 소비한 양만큼 함께 줄어듭니다.
 
-기본 발화, 입력 크기, 가상 더듬이 간격, 출력 해석은 공학적으로 정한 값입니다.
-후각 adapter는 약한 냄새와 좌우 대비를 화면의 작은 몸체가 읽을 수 있게 만든 보정이며,
-DM1_lPN 값은 외부 입력을 그대로 표시한 값이 아니라 연결 그래프를 통과한 spike 기반 발화율입니다.
-냄새가 일정 시간 약해지면 디코더가 뉴런 출력의 이력만으로 최대 1.8초 동안 재탐색 선회를 넣습니다.
-이 입력 adapter와 PN lookup, 2D 운동 변환을 생물학적으로 검증된 food-seeking 회로 재현으로 해석하지 않습니다.
-신경삭·근육·유체역학을 포함한 전신 비행 모델은 구현하지 않았습니다.
-접촉 자극은 현재 설정에서 주로 회피 출력을 높이며, 자연스러운 몸 닦기까지 검증한 것은 아닙니다.
-허기는 뇌 안의 생물학적 hunger circuit이 아니라 2D game body 상태입니다.
-시간이 흐르면 허기가 올라가고, 허기가 20% 이하이면 냄새·단맛의 food drive를 끄며,
-60% 이상 회복되면 다시 켭니다. 중간 구간에서는 이전 상태를 유지합니다.
-그림자·접촉 입력은 이 food drive의 영향을 받지 않습니다. 뇌 공간의 기억 상태와 학습은 현재 구현하지 않았습니다.
-
-현재 데이터는 최신 **MaleCNS**와 다릅니다. 별도로 재현한 **Shiu et al.의 v630 Brian2 모델**과
-이 앱의 수정된 v783 Metal 모델도 수치적으로 동일하다고 취급하지 않습니다.
-
-</details>
+신경망의 기본 발화, 입력 크기, 데이터셋별 gain, 뉴런 출력의 움직임 변환은 공학적으로 보정한 값입니다.
+연결 수·가중치를 읽는 것과 생물학적 신경 동역학을 완전히 재현하는 것은 다릅니다.
+세부 보정값과 검증 범위는 [검증 기록](docs/verification.md)에 정리했습니다.
 
 ## 검증
 
-**2026-10-02 · Apple M1 Pro · release 빌드**
+**Apple M1 Pro에서 실행 · 최종 확인 2026-10-06 KST**
 
-| 검증 항목 | 결과 |
-| :--- | :--- |
-| 코어 테스트 | **29개 통과** — BodyState 6개, BrainEngine 10개, World 13개 |
-| 허기 cycle | seed 42에서 첫 먹이 반응 종료 12.466초(hunger 0.19983), 회복 후 두 번째 먹이 200.566초 배치, 214.366초 종료 |
-| 섭취·회복 | 첫 먹이 0.4095개, 두 번째 0.3575개, 누적 0.767개 · 회복 183.1초 |
-| 허기 신경 반응 | 허기 상태 PN 최대 875.08 Hz · 포만 2초 후 PN 약 0.000037 Hz |
-| 허기 대조군 | 첫 먹이 제거 시 body 상태 불변 · 뇌에 먹이 좌표를 전달하지 않음 |
-| 허기 반영 먹이 grid | seed 42, 3거리 × 6방위 18조건 모두 접촉·섭취 · 접촉 2.633–27.333초 · 감각 차단 3개 대조군은 no-food와 body·neural digest 일치 |
-| historical 먹이 grid | 허기 도입 전 36조건은 아래 검증 기록으로 분리 |
-| 이전 headless benchmark | 뇌 시간 10초를 **약 0.97초**에 계산한 허기 도입 전 기록 |
-| 이전 benchmark 메모리 | 허기 도입 전 headless 프로세스 최대 resident memory **약 234 MiB** |
-| 앱 패키지 | 다른 폴더로 옮긴 앱에서 데이터 로딩과 실행 확인 |
+| 항목 | FlyWire v783 | Male CNS v1.0 |
+| :--- | :--- | :--- |
+| 먹이 탐색 | 18/18 배치에서 접촉·양의 섭취량 | 18/18 배치에서 접촉·양의 섭취량 |
+| 감각 차단 대조군 | 3조건 모두 무자극 신경·이동 결과와 일치 | 3조건 모두 무자극 신경·이동 결과와 일치 |
+| 허기 주기 | 섭식 → 포만 → 회복 → 두 번째 식사 | 섭식 → 포만 → 회복 → 두 번째 식사 |
+| 기억 | 섭취 보상·반응 변화·저장·위협 반전·망각 확인 | 섭취 보상·반응 변화·저장·위협 반전·망각 확인 |
+| 2·4개체 | 독립 신경망·기억·선택 자극 격리, 먹이 총량 보존 | 독립 신경망·기억·선택 자극 격리, 먹이 총량 보존 |
+| 2개체 / 4개체 계산 속도¹ | 실시간의 **5.03× / 2.22×** | 실시간의 **2.36× / 1.19×** |
 
-허기 도입 전의 18개 grid 기록은 기본 run 15/18 전량 소비, 추가 뇌 warmup run 18/18 섭취였고,
-두 run 합계 36조건이 접촉·섭취를 통과했습니다. 이 수치는 현재 포만 동작이 추가된 최종 결과가 아닙니다.
-현재 허기 반영 run은 같은 seed 42의 18조건에서 18/18 접촉과 18/18 섭취를 확인했으며,
-포만 상태에 들어가면 먹이를 남길 수 있으므로 전량 소비를 요구하지 않습니다.
-속도·메모리는 창 렌더링과 장시간 배터리 사용을 포함하지 않은 이전 `--benchmark` 기록이며,
-현재 최종 앱의 GUI·runtime 성능과 동일한 수치로 보지 않습니다.
-허기 상태가 모든 seed나 초기 조건에서 최단 경로와 안정적인 탐색을 보장하는 것도 아닙니다.
-구체적인 조건과 검증 범위는 [검증 기록](docs/verification.md)을 참고하세요.
+**코어 테스트 67개 통과 · GUI 확인 26개 통과 · 앱 빌드·ad hoc 서명 확인**
+
+¹ 개체군 속도는 화면 렌더링과 시작 준비 시간을 제외한 headless 측정값입니다.
+FlyWire 허기·개체군 측정은 2026-10-02, 두 모델의 먹이 탐색·학습과 Male CNS의 나머지 검증은
+2026-10-06 결과입니다.
+
+이 결과는 고정 seed와 진단 조건에서 확인했습니다. 임의 배치의 탐색 성공이나 최단 경로를 보장하지 않습니다.
+Male CNS 일부 배치는 30초 관찰 종료 직전에 접촉했으며, 4개체 실험에서 한 개체는 먹지 못했습니다.
+학습 실험은 신경 반응·경로·선택의 변화를 확인했지만 **더 나은 먹이 선호를 입증하지는 않았습니다.**
+Male CNS 접촉 입력의 뚜렷한 운동 효과도 아직 확인하지 못했습니다.
+
+[전체 검증 기록](docs/verification.md) · [수치와 GUI 확인 요약 JSON](docs/verification-summary.json)
 
 <details>
 <summary><strong>직접 검증 실행하기</strong></summary>
 
+데이터를 준비한 프로젝트 폴더에서 실행합니다. `model`을 `flywire-v783`으로 바꾸면 같은 절차로 비교할 수 있습니다.
+
 ```sh
-# 데이터 준비 후 코어 테스트
 swift test -c release
-
-# 무자극·냄새·단맛·그림자·접촉·입력 차단 비교
-swift run -c release NeuroFly --probe
-
-# 뇌 시간 10초의 계산 성능 측정
-swift run -c release NeuroFly --benchmark
-
-# 허기 cycle: 첫 먹이 → 포만 → 자연 회복 → 두 번째 먹이
 mkdir -p artifacts
-swift run -c release NeuroFly --hunger > artifacts/hunger.json
-python3 scripts/verify-hunger.py artifacts/hunger.json
+model=malecns
 
-# 허기 반영 먹이 탐색 grid
-swift run -c release NeuroFly --foraging > artifacts/foraging-hunger.json
-python3 scripts/verify-foraging.py artifacts/foraging-hunger.json --require-full-grid --require-contact
+swift run -c release NeuroFly --probe --model "$model" > "artifacts/probe-$model.json"
 
-# 기존 좌·정면·우 3배치도 같은 30초 관찰 시간으로 확인
-swift run -c release NeuroFly --experiment > artifacts/world-experiment.json
-python3 scripts/verify-experiment.py
+swift run -c release NeuroFly --foraging --model "$model" > "artifacts/foraging-$model.json"
+python3 scripts/verify-foraging.py "artifacts/foraging-$model.json" --require-full-grid --require-contact
+
+swift run -c release NeuroFly --hunger --model "$model" > "artifacts/hunger-$model.json"
+python3 scripts/verify-hunger.py "artifacts/hunger-$model.json"
+
+swift run -c release NeuroFly --learning --model "$model" > "artifacts/learning-$model.json"
+python3 scripts/verify-evolution.py "artifacts/learning-$model.json" --learning
+
+swift run -c release NeuroFly --population --model "$model" > "artifacts/population-$model.json"
+python3 scripts/verify-evolution.py "artifacts/population-$model.json" --population
 ```
 
-원저자 Brian2 모델의 별도 재현 절차는 [reference 실험 안내](tools/reference/README.md)에 있습니다.
-`--hunger`는 seed 42에서 214.366초의 두 먹이 cycle을 기록합니다. 허기는 뇌 내부 회로가 아니라
-BodyState의 공학적 game mechanic이며, `foodDrive`는 ORN·단맛 외부 drive만 조절합니다.
-`--foraging`은 seed 42, 30초, Gaussian 냄새장(σ=180)의 2,560 × 1,400 공간을 사용하며,
-허기 반영 후의 18조건은 모두 접촉하고 0보다 큰 섭취량 감소를 기록합니다. 포만으로 일부 먹이가 남는
-현재 결과와 감각 차단 대조군의 세부 조건은 [검증 기록](docs/verification.md)에 남겼습니다.
-실험 산출물은 로컬 `artifacts/`에 저장하며 Git에는 포함하지 않습니다.
+원본 진단 출력은 로컬 `artifacts/`에 생성되며 Git에서 제외됩니다.
+공개 저장소에는 [검증 요약](docs/verification-summary.json)을 포함합니다.
+원저자 v630 Brian2 모델의 별도 재현은 [reference 실험 안내](tools/reference/README.md)를 참고하세요.
+이 앱의 수정된 Metal 모델과 원저자 모델을 수치적으로 동일하게 취급하지 않습니다.
 
 </details>
 
 ## 프로젝트 구조
 
 ```text
-Sources/
-├── NeuroFlyCore/
-│   ├── Brain/              연결 데이터 로딩 · Metal 신경 계산
-│   ├── Resources/          LIF Metal 커널
-│   ├── BrainCalibration.swift  좌우 후각 출력 보정
-│   ├── BodyState.swift         허기 · 먹이 반응 · 누적 섭취
-│   ├── Models.swift            감각 · 뉴런 출력 · 월드 상태
-│   └── World.swift             감각장 · 운동 변환 · 2D 몸체
-└── NeuroFly/
-    ├── UI/                 바탕화면 펫 · 메뉴 · 상태 창 · 실험실
-    ├── SimulationSession.swift  신경망과 월드의 실행 루프
-    └── NeuroFlyMain.swift        앱 시작 · CLI 검증 명령
-Tests/                      코어 동작 검증
-scripts/                    데이터 준비 · 앱 빌드 · 먹이/허기 검증
-data/                      데이터 명세 · 출처와 이용 조건
-docs/                      프로젝트 이미지 · 검증 기록
-tools/reference/           원저자 Brian2 모델 재현 도구
+Sources/NeuroFlyCore/    연결 데이터 · Metal 계산 · 허기 · 기억 · 개체군
+Sources/NeuroFly/        AppKit/SpriteKit 펫 · 메뉴 · 상태 창 · 실행 루프
+Tests/                  코어 회귀 테스트
+scripts/                데이터 다운로드·변환 · 앱 빌드 · 진단 검증
+data/                   고정 데이터 명세 · 출처와 이용 조건
+docs/                   이미지 · 검증 기록과 수치 요약
+tools/reference/        원저자 Brian2 모델의 별도 재현 도구
 ```
 
-연결 데이터 바이너리, 빌드된 앱, 가상 환경과 로컬 실험 산출물은 저장소에서 제외합니다.
+## 데이터와 이용 조건
 
-## 이후 실험
+| 모델 | 뉴런 / annotated body | 방향성 연결 | 집계 synapse | 데이터 이용 조건 |
+| :--- | ---: | ---: | ---: | :--- |
+| **FlyWire FAFB v783** | 139,255 | 15,091,983 | 54,492,922 | [CC BY-NC 4.0](data/DATA_LICENSE.md) |
+| **Male CNS v1.0** | 166,700 | 25,582,938 | 124,177,617 | [CC BY 4.0](data/malecns/DATA_LICENSE.md) |
 
-지금은 **한 마리의 초파리, 먹이, 그림자, 접촉, 허기, 상태 관찰**에 집중합니다.
-다음 검토 후보는 **기억·학습 → 여러 개체 → MaleCNS 전환** 순서입니다.
+Male CNS 수치는 고정된 공식 v1.0 export에서 `superclass`가 있는 annotated body와 양 끝점이
+그 집합에 포함되는 연결을 가져온 결과입니다. 원본 pin, 경계 밖 행 제외, 부호 가정과 출처는
+[Male CNS 데이터 고지](data/malecns/DATA_LICENSE.md)에 기록했습니다.
 
-## 출처와 이용 조건
+코드와 데이터의 이용 조건은 별개입니다. 두 모델을 함께 묶는 기본 앱에는 비상업적 조건의 FlyWire 데이터도 포함됩니다.
+아래 연구·프로젝트와 각 데이터의 attribution을 확인해 주세요.
 
-- **[SiliconFly](https://github.com/dawsonamf/siliconfly/tree/8839d84cd24888a4251a2e227792b6f26fbee776)**
-  — Metal 계산과 데이터 로딩을 참고·수정했습니다. 원 코드의 MIT 고지는
-  [ThirdParty/SiliconFly-LICENSE](ThirdParty/SiliconFly-LICENSE)에 보존했습니다.
-- **[FlyWire](https://flywire.ai/)** — 파생 데이터는 **CC BY-NC 4.0**입니다.
-  코드와 데이터의 이용 조건은 별개입니다. 출처와 비상업적 사용 조건은
-  [data/DATA_LICENSE.md](data/DATA_LICENSE.md)를 확인하세요.
-- **[Shiu et al., Nature 2024](https://doi.org/10.1038/s41586-024-07763-9)**
-  — 기준 연구와 [원저자 모델](https://github.com/philshiu/Drosophila_brain_model).
-- **[MaleCNS](https://male-cns.janelia.org/)** — 후속 검토 대상이며 현재 앱에 포함되지 않습니다.
+- **[SiliconFly](https://github.com/dawsonamf/siliconfly/tree/8839d84cd24888a4251a2e227792b6f26fbee776)** — Metal 계산과 로딩 코드를 참고·수정했습니다. [원 코드의 MIT 고지](ThirdParty/SiliconFly-LICENSE)를 보존했습니다.
+- **[FlyWire](https://flywire.ai/)** — FAFB v783 연결 데이터. [데이터 출처·논문·이용 조건](data/DATA_LICENSE.md).
+- **[Shiu et al., Nature 2024](https://doi.org/10.1038/s41586-024-07763-9)** — 기준 연구와 [원저자 모델](https://github.com/philshiu/Drosophila_brain_model).
+- **[Male CNS · HHMI Janelia](https://male-cns.janelia.org/)** — 공식 v1.0 원본. [Berg et al., 수컷 초파리 중추신경계 커넥톰 연구](https://pmc.ncbi.nlm.nih.gov/articles/PMC12636603/).
 
 ---
 

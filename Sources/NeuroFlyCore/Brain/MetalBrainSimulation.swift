@@ -84,10 +84,25 @@ private struct BrainTuning {
     let refractoryMs: UInt32 = 2
     let floorV: Float = -2
     let weightScale: Float = 0.0032
+    // The imported Male CNS graph has about 1.9x the weighted synaptic
+    // contacts per neuron of the shipped FlyWire graph (745 vs 391). Apply
+    // only a dataset-specific whole-network gain while preserving relative
+    // edge signs and ratios.
+    let maleWeightScaleMultiplier: Float = 0.525
     let modScale: Float = 0.5
     let gapJunctionBoost: Float = 0.5
     let sensoryGFBoost: Float = 1.5
     let gfInputScale: Float = 0.12
+    // Male CNS manifests have no role table, so the two explicit DM1_lPN
+    // readouts otherwise receive the entire tonic central network. Retain a
+    // separate, measured sensory-path gain while attenuating unrelated
+    // background edges. This is an explicit simulator gain, not a claim
+    // about an in-vivo synaptic conductance.
+    let odorRelaySensoryScale: Float = 0.05
+    let odorRelayBackgroundScale: Float = 0.02
+    // Male MN9 taste drive is a measured simulator calibration so the sparse
+    // explicit taste path remains observable without changing FlyWire.
+    let maleTasteGain: Float = 0.75
     let inhibitoryDelayMs: Int = 4
     let pNoise: Float = 0.005
     let noiseKick: Float = 0.25
@@ -103,6 +118,7 @@ final class MetalBrainSimulation {
     let mappingSummary: [String: String]
 
     private let connectome: LoadedConnectome
+    private let maleModel: Bool
     private let tuning = BrainTuning()
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
@@ -154,6 +170,7 @@ final class MetalBrainSimulation {
 
     init(connectome: LoadedConnectome, seed: UInt32) throws {
         self.connectome = connectome
+        maleModel = connectome.modelID == BrainModel.maleCNS.rawValue
         neuronCount = connectome.neuronCount
         edgeCount = connectome.edgeCount
         self.seed = seed
@@ -253,11 +270,24 @@ final class MetalBrainSimulation {
         classOf = connectome.superClass
         let classRanges = connectome.superClassNames.map { name -> ClosedRange<Float> in
             switch name {
-            case "optic", "visual_projection": return 0.021...0.043
-            case "central": return 0.023...0.047
-            case "visual_centrifugal", "descending", "ascending", "motor", "endocrine":
+            // Male CNS uses anatomical superclass names while the legacy
+            // FlyWire manifest uses the shorter optic/central/sensory labels.
+            // Keep the old ranges unchanged and map only their documented
+            // Male CNS counterparts here.
+            case "optic", "ol_intrinsic", "visual_projection", "visual_projection_tbc":
+                return 0.021...0.043
+            case "central", "cb_intrinsic", "vnc_intrinsic":
+                return 0.023...0.047
+            case "visual_centrifugal", "descending", "descending_neuron",
+                 "descending_neuron_tbc", "ascending", "ascending_neuron",
+                 "ascending_neuron_tbc", "motor", "cb_motor", "vnc_motor",
+                 "endocrine", "cb_endocrine", "vnc_endocrine", "cb_efferent",
+                 "vnc_efferent", "efferent_ascending", "efferent_descending", "ENS":
                 return 0.019...0.043
-            case "sensory", "sensory_ascending": return 0.000...0.006
+            case "sensory", "sensory_ascending", "sensory_ascending_tbc",
+                 "cb_sensory", "cb_sensory_tbc", "ol_sensory", "vnc_sensory",
+                 "vnc_sensory_tbc":
+                return 0.000...0.006
             default: return 0.019...0.043
             }
         }
@@ -349,28 +379,62 @@ final class MetalBrainSimulation {
                 (side == nil || c.side[$0] == side!) }
         }
 
-        // DM1 is a concrete, bilateral ORN channel in the supplied artifact.
-        // The external drive stops at these ORNs; the DM1 projection neurons
-        // below are observed as relays after the graph propagates the spikes.
-        let odorLeft = byType({ $0.lowercased() == "orn_dm1" }, side: sideLeft)
-        let odorRight = byType({ $0.lowercased() == "orn_dm1" }, side: sideRight)
+        // DM1 is a concrete, bilateral ORN channel in the supplied FlyWire
+        // artifact. Dataset manifests may replace this legacy selector with
+        // explicit root-ID groups; Male CNS never reaches this heuristic path.
+        let explicit = c.neuralMapping
+        let odorLeft = explicit.map { $0.odorLeft }
+            ?? byType({ $0.lowercased() == "orn_dm1" }, side: sideLeft)
+        let odorRight = explicit.map { $0.odorRight }
+            ?? byType({ $0.lowercased() == "orn_dm1" }, side: sideRight)
         let odorAll = odorLeft + odorRight
-        let odorRelays = c.rootId.indices.filter { odorRelayRootIDs.contains(c.rootId[$0]) }
-        let taste = c.rootId.indices.filter { sugarGRNRootIDs.contains(c.rootId[$0]) }
-        let feeding = c.rootId.indices.filter { feedingReadoutRootIDs.contains(c.rootId[$0]) }
-        let loomingLeft = byRole(["lc4", "lplc2"], side: sideLeft)
-        let loomingRight = byRole(["lc4", "lplc2"], side: sideRight)
-        let touch = byRole(["sens"])
+        let odorRelayLeft: [Int] = explicit.map { $0.odorRelayLeft }
+            ?? Array(c.rootId.indices.filter { c.rootId[$0] == 720575940630770042 })
+        let odorRelayRight: [Int] = explicit.map { $0.odorRelayRight }
+            ?? Array(c.rootId.indices.filter { c.rootId[$0] == 720575940619071005 })
+        let odorRelays = odorRelayLeft + odorRelayRight
+        let taste = explicit.map { $0.taste }
+            ?? c.rootId.indices.filter { sugarGRNRootIDs.contains(c.rootId[$0]) }
+        let feeding = explicit.map { $0.feeding }
+            ?? c.rootId.indices.filter { feedingReadoutRootIDs.contains(c.rootId[$0]) }
+        let loomingLeft = explicit.map { $0.loomingLeft }
+            ?? byRole(["lc4", "lplc2"], side: sideLeft)
+        let loomingRight = explicit.map { $0.loomingRight }
+            ?? byRole(["lc4", "lplc2"], side: sideRight)
+        let touch = explicit.map { $0.touch } ?? byRole(["sens"])
         guard odorAll.count > 0, odorLeft.count > 0, odorRight.count > 0,
-              odorRelays.count == odorRelayRootIDs.count,
-              taste.count == sugarGRNRootIDs.count,
-              feeding.count == feedingReadoutRootIDs.count,
+              !odorRelayLeft.isEmpty, !odorRelayRight.isEmpty,
+              !taste.isEmpty, !feeding.isEmpty,
               !touch.isEmpty, !loomingLeft.isEmpty || !loomingRight.isEmpty else {
             throw BrainEngineError.invalidData(
-                "shipped sensory/readout root IDs or bilateral ORN_DM1 mapping are incomplete")
+                explicit == nil
+                    ? "shipped sensory/readout root IDs or bilateral ORN_DM1 mapping are incomplete"
+                    : "manifest sensory/readout mapping is incomplete")
         }
-        guard taste.allSatisfy({ c.superClassNames[Int(c.superClass[$0])] == "sensory" }) else {
-            throw BrainEngineError.invalidData("published sugar GRN IDs are not sensory neurons in this artifact")
+        func isSensory(_ index: Int) -> Bool {
+            let name = c.superClassNames[Int(c.superClass[index])]
+            // Male CNS uses the anatomical taxonomy rather than FlyWire's
+            // compact "sensory" label.  These are the source classes used by
+            // the explicit ORN/GRN/JO and LC4 manifest groups.  Do not widen
+            // this to descending, intrinsic, motor, or generic "other"
+            // classes: external inputs must still terminate at sensory
+            // neurons, never at command/readout neurons.
+            return [
+                "sensory", "sensory_ascending", "sensory_ascending_tbc",
+                "visual_projection", "visual_projection_tbc", "visual_centrifugal",
+                "cb_sensory", "cb_sensory_tbc", "ol_sensory",
+                "vnc_sensory", "vnc_sensory_tbc",
+            ].contains(name)
+        }
+        let allSensoryInputs = odorAll + taste + loomingLeft + loomingRight + touch
+        if explicit != nil {
+            guard allSensoryInputs.allSatisfy(isSensory) else {
+                throw BrainEngineError.invalidData("manifest sensory mapping includes a non-sensory neuron")
+            }
+        } else {
+            guard taste.allSatisfy(isSensory) else {
+                throw BrainEngineError.invalidData("published sugar GRN IDs are not sensory neurons in this artifact")
+            }
         }
 
         var sensory = [UInt8](repeating: 0, count: n)
@@ -395,13 +459,17 @@ final class MetalBrainSimulation {
         try assign(touch, 6)
 
         var groups = [UInt8](repeating: 0, count: n)
-        let roleTurnLeft = byRole(["dna01", "dna02"], side: sideLeft)
-        let roleTurnRight = byRole(["dna01", "dna02"], side: sideRight)
-        let roleForward = byRole(["dnp09"])
-        let roleEscape = byRole(["gf"])
-        let roleGrooming = byRole(["dng11"])
-        let flightLeft = byType({ $0.lowercased().hasPrefix("dng02_") }, side: sideLeft)
-        let flightRight = byType({ $0.lowercased().hasPrefix("dng02_") }, side: sideRight)
+        let roleTurnLeft = explicit.map { $0.turnLeft }
+            ?? byRole(["dna01", "dna02"], side: sideLeft)
+        let roleTurnRight = explicit.map { $0.turnRight }
+            ?? byRole(["dna01", "dna02"], side: sideRight)
+        let roleForward = explicit.map { $0.forward } ?? byRole(["dnp09"])
+        let roleEscape = explicit.map { $0.escape } ?? byRole(["gf"])
+        let roleGrooming = explicit.map { $0.grooming } ?? byRole(["dng11"])
+        let flightLeft = explicit.map { $0.flightLeft }
+            ?? byType({ $0.lowercased().hasPrefix("dng02_") }, side: sideLeft)
+        let flightRight = explicit.map { $0.flightRight }
+            ?? byType({ $0.lowercased().hasPrefix("dng02_") }, side: sideRight)
 
         // The v783 annotation names the two published MN9 correspondence
         // neurons as CB0701, so root IDs are the stable selector here.
@@ -426,33 +494,59 @@ final class MetalBrainSimulation {
         try assignGroup(roleEscape, UInt8(BrainGroup.escape))
         try assignGroup(roleFeeding, UInt8(BrainGroup.feeding))
         try assignGroup(roleGrooming, UInt8(BrainGroup.grooming))
-        guard let odorRelayLeft = odorRelays.first(where: { c.rootId[$0] == 720575940630770042 }),
-              let odorRelayRight = odorRelays.first(where: { c.rootId[$0] == 720575940619071005 }) else {
-            throw BrainEngineError.invalidData("DM1_lPN relay IDs disappeared during mapping")
-        }
-        try assignGroup([odorRelayLeft], UInt8(BrainGroup.odorRelayLeft))
-        try assignGroup([odorRelayRight], UInt8(BrainGroup.odorRelayRight))
+        try assignGroup(odorRelayLeft, UInt8(BrainGroup.odorRelayLeft))
+        try assignGroup(odorRelayRight, UInt8(BrainGroup.odorRelayRight))
         try assignGroup(flightLeft, UInt8(BrainGroup.flightLeft))
         try assignGroup(flightRight, UInt8(BrainGroup.flightRight))
 
         let groupSizes = (1...10).map { id in
             Float(max(1, groups.reduce(into: 0) { if Int($1) == id { $0 += 1 } }))
         }
+        let sourceDescription = explicit == nil ? "legacy FlyWire role/type selectors" : "manifest neuralMapping root IDs"
         let summary: [String: String] = [
-            "odorLeft": "\(leftOdor.count) ORN_DM1 neurons with left-side annotations (kind 1)",
-            "odorRight": "\(rightOdor.count) ORN_DM1 neurons with right-side annotations (kind 2)",
-            "odorRelay": "DM1_lPN root IDs observed: left 1, right 1; relay groups are read after graph propagation",
-            "flightCandidate": "DNg02_a..h candidate flight readout: left \(flightLeft.count), right \(flightRight.count); diagnostic only",
-            "taste": "\(taste.count) published sugar GRN root IDs (kind 3)",
-            "loomingLeft": "\(loomingLeft.count) LC4/LPLC2 role neurons on the left (kind 4)",
-            "loomingRight": "\(loomingRight.count) LC4/LPLC2 role neurons on the right (kind 5)",
-            "touch": "\(touch.count) annotated sensory role neurons (kind 6)",
-            "turnLeft": "DNa01/DNa02 left: \(roleTurnLeft.count)",
-            "turnRight": "DNa01/DNa02 right: \(roleTurnRight.count)",
-            "forward": "DNp09: \(roleForward.count)",
-            "escape": "DNp01/GF role: \(roleEscape.count)",
-            "feeding": "CB0701 MN9 correspondence root IDs: \(roleFeeding.count)",
-            "grooming": "DNg11: \(roleGrooming.count)",
+            "odorLeft": explicit == nil
+                ? "\(leftOdor.count) ORN_DM1 neurons with left-side annotations (kind 1)"
+                : String(leftOdor.count) + " " + sourceDescription + " (kind 1)",
+            "odorRight": explicit == nil
+                ? "\(rightOdor.count) ORN_DM1 neurons with right-side annotations (kind 2)"
+                : String(rightOdor.count) + " " + sourceDescription + " (kind 2)",
+            "odorRelay": explicit == nil
+                ? "DM1_lPN root IDs observed: left 1, right 1; relay groups are read after graph propagation"
+                : "manifest neuralMapping root IDs; relay groups are read after graph propagation",
+            "flightCandidate": explicit == nil
+                ? "DNg02_a..h candidate flight readout: left \(flightLeft.count), right \(flightRight.count); diagnostic only"
+                : "manifest neuralMapping flight candidates: left \(flightLeft.count), right \(flightRight.count); diagnostic only",
+            "taste": explicit == nil
+                ? "\(taste.count) published sugar GRN root IDs (kind 3)"
+                : "\(taste.count) manifest neuralMapping IDs (kind 3)",
+            "loomingLeft": explicit == nil
+                ? "\(loomingLeft.count) LC4/LPLC2 role neurons on the left (kind 4)"
+                : "\(loomingLeft.count) manifest neuralMapping IDs (kind 4)",
+            "loomingRight": explicit == nil
+                ? "\(loomingRight.count) LC4/LPLC2 role neurons on the right (kind 5)"
+                : "\(loomingRight.count) manifest neuralMapping IDs (kind 5)",
+            "touch": explicit == nil
+                ? "\(touch.count) annotated sensory role neurons (kind 6)"
+                : "\(touch.count) manifest neuralMapping IDs (kind 6)",
+            "turnLeft": explicit == nil
+                ? "DNa01/DNa02 left: \(roleTurnLeft.count)"
+                : "manifest neuralMapping IDs left: \(roleTurnLeft.count)",
+            "turnRight": explicit == nil
+                ? "DNa01/DNa02 right: \(roleTurnRight.count)"
+                : "manifest neuralMapping IDs right: \(roleTurnRight.count)",
+            "forward": explicit == nil
+                ? "DNp09: \(roleForward.count)"
+                : "manifest neuralMapping IDs: \(roleForward.count)",
+            "escape": explicit == nil
+                ? "DNp01/GF role: \(roleEscape.count)"
+                : "manifest neuralMapping IDs: \(roleEscape.count)",
+            "feeding": explicit == nil
+                ? "CB0701 MN9 correspondence root IDs: \(roleFeeding.count)"
+                : "manifest neuralMapping IDs: \(roleFeeding.count)",
+            "grooming": explicit == nil
+                ? "DNg11: \(roleGrooming.count)"
+                : "manifest neuralMapping IDs: \(roleGrooming.count)",
+            "dataset": "\(c.modelName) [\(c.modelID)]",
             "model": "Fixed-step LIF with engineered baseline/noise/gain and body-state food modulation; no biological hunger circuit, learning, or memory",
             "inputContract": "External channels are assigned only to sensory receptor/pathway neurons; command neurons receive graph drive",
         ]
@@ -460,17 +554,112 @@ final class MetalBrainSimulation {
                        groupSizes: groupSizes, summary: summary)
     }
 
+    /// Pick a fixed-point scale that keeps every possible positive or
+    /// negative per-target accumulation below Int32.max.  This is kept as a
+    /// small pure helper so the graph-bound calculation can be regression
+    /// tested without requiring a Metal device.
+    static func chooseFixedPointScale(positiveIncoming: [Double],
+                                      negativeIncoming: [Double],
+                                      positiveCounts: [UInt32],
+                                      negativeCounts: [UInt32],
+                                      initialScale: Float = 1_048_576) throws -> Float {
+        guard positiveIncoming.count == negativeIncoming.count,
+              positiveIncoming.count == positiveCounts.count,
+              positiveIncoming.count == negativeCounts.count,
+              initialScale.isFinite, initialScale > 0 else {
+            throw BrainEngineError.invalidData("invalid fixed-point accumulator bounds")
+        }
+        let int32Limit = Double(Int32.max)
+        func fits(_ scale: Float) -> Bool {
+            let factor = Double(scale)
+            for target in positiveIncoming.indices {
+                // Each rounded edge can differ from its real-valued product by
+                // at most 0.5. One whole unit per edge leaves a small margin
+                // for Float-to-Double conversion and protects the strict
+                // Int32 bound.
+                let positiveBound = positiveIncoming[target] * factor +
+                    Double(positiveCounts[target])
+                let negativeBound = negativeIncoming[target] * factor +
+                    Double(negativeCounts[target])
+                if positiveBound > int32Limit || negativeBound > int32Limit {
+                    return false
+                }
+            }
+            return true
+        }
+
+        var scale = initialScale
+        while !fits(scale) {
+            guard scale > 0.0000000001 else {
+                throw BrainEngineError.invalidData(
+                    "quantized edge weights overflow Int32 even at the smallest safe scale")
+            }
+            scale *= 0.5
+        }
+        return scale
+    }
+
     private static func buildWeights(connectome c: LoadedConnectome,
                                      tuning p: BrainTuning,
                                      into output: MTLBuffer) throws -> Float {
         let e = c.edgeCount
         let n = c.neuronCount
-        var maxAbs: Float = 0
+        // The atomic accumulators in LIF.metal are Int32 values.  The old
+        // guard estimated the worst case as `maxEdge * 4096`, which was a
+        // useful FlyWire heuristic but is not a bound for the much larger
+        // Male CNS graph: a single target can have more than 4096 incoming
+        // edges.  Measure the positive and negative incoming sums per target
+        // before choosing the fixed-point scale.  This keeps every possible
+        // one-step accumulator in range without clipping or dropping edges.
+        var positiveIncoming = [Double](repeating: 0, count: n)
+        var negativeIncoming = [Double](repeating: 0, count: n)
+        var positiveCounts = [UInt32](repeating: 0, count: n)
+        var negativeCounts = [UInt32](repeating: 0, count: n)
+        var maxEdgeAbs: Double = 0
+        var minNonZeroEdgeAbs = Double.greatestFiniteMagnitude
+        var mappedGroups = [UInt8](repeating: 0, count: n)
+        var mappedInputs = [UInt8](repeating: 0, count: n)
+        let modelWeightScale = c.modelID == BrainModel.maleCNS.rawValue
+            ? p.weightScale * p.maleWeightScaleMultiplier : p.weightScale
+        if let mapping = c.neuralMapping {
+            for (name, indices) in mapping.groups {
+                let group: UInt8
+                switch name {
+                case "turnLeft": group = UInt8(BrainGroup.turnLeft)
+                case "turnRight": group = UInt8(BrainGroup.turnRight)
+                case "forward": group = UInt8(BrainGroup.forward)
+                case "escape": group = UInt8(BrainGroup.escape)
+                case "feeding": group = UInt8(BrainGroup.feeding)
+                case "grooming": group = UInt8(BrainGroup.grooming)
+                case "odorRelayLeft": group = UInt8(BrainGroup.odorRelayLeft)
+                case "odorRelayRight": group = UInt8(BrainGroup.odorRelayRight)
+                case "flightLeft": group = UInt8(BrainGroup.flightLeft)
+                case "flightRight": group = UInt8(BrainGroup.flightRight)
+                default: group = 0
+                }
+                if group != 0 {
+                    for index in indices { mappedGroups[index] = group }
+                }
+                let input: UInt8
+                switch name {
+                case "odorLeft": input = 1
+                case "odorRight": input = 2
+                case "taste": input = 3
+                case "loomingLeft": input = 4
+                case "loomingRight": input = 5
+                case "touch": input = 6
+                default: input = 0
+                }
+                if input != 0 {
+                    for index in indices { mappedInputs[index] = input }
+                }
+            }
+        }
         c.colIdxData.withUnsafeBytes { colRaw in
             c.weightData.withUnsafeBytes { weightRaw in
                 for source in 0..<n {
                     let modulatory = c.modulatoryNts.contains(c.ntNames[Int(c.nt[source])])
-                    let rowGain = p.weightScale * (modulatory ? p.modScale : 1)
+                    let rowGain = modelWeightScale * (modulatory ? p.modScale : 1)
                     for edge in Int(c.rowStart[source])..<Int(c.rowStart[source + 1]) {
                         let target = Int(colRaw.loadUnaligned(fromByteOffset: edge * 4, as: UInt32.self))
                         let targetRole = c.roleNames[Int(c.role[target])]
@@ -487,26 +676,64 @@ final class MetalBrainSimulation {
                         } else {
                             gfGain = 1
                         }
-                        let weight = Float(abs(Int(weightRaw.loadUnaligned(fromByteOffset: edge * 2,
-                                                                           as: Int16.self))))
-                        maxAbs = max(maxAbs, weight * rowGain * gfGain)
+                        let targetGroup = mappedGroups[target]
+                        let relayGain: Float
+                        if targetGroup == UInt8(BrainGroup.odorRelayLeft) ||
+                            targetGroup == UInt8(BrainGroup.odorRelayRight) {
+                            relayGain = mappedInputs[source] == 0
+                                ? p.odorRelayBackgroundScale : p.odorRelaySensoryScale
+                        } else {
+                            relayGain = 1
+                        }
+                        let weight = Float(weightRaw.loadUnaligned(fromByteOffset: edge * 2,
+                                                                    as: Int16.self)) * rowGain * gfGain * relayGain
+                        guard weight != 0 else { continue }
+                        let absoluteWeight = Double(abs(weight))
+                        maxEdgeAbs = max(maxEdgeAbs, absoluteWeight)
+                        minNonZeroEdgeAbs = min(minNonZeroEdgeAbs, absoluteWeight)
+                        if weight > 0 {
+                            positiveIncoming[target] += Double(weight)
+                            positiveCounts[target] &+= 1
+                        } else {
+                            negativeIncoming[target] += Double(-weight)
+                            negativeCounts[target] &+= 1
+                        }
                     }
                 }
             }
         }
-        var scale: Float = 1_048_576
-        while scale > 65_536 && Double(maxAbs) * Double(scale) * 4096 > Double(Int32.max) {
-            scale /= 2
+
+        // Retain the old max-edge*4096 power-of-two scale as an upper bound
+        // when it is valid, so FlyWire calibration does not change merely
+        // because the stronger Male CNS bound is now available. Unlike the
+        // old implementation, this can continue below 65,536 when a graph
+        // actually needs it; the per-target check below may reduce it again.
+        var legacyScale: Float = 1_048_576
+        while maxEdgeAbs * Double(legacyScale) * 4096 > Double(Int32.max) {
+            guard legacyScale > 0.0000000001 else {
+                throw BrainEngineError.invalidData(
+                    "quantized edge weights overflow Int32 at every legacy scale")
+            }
+            legacyScale *= 0.5
         }
-        guard Double(maxAbs) * Double(scale) * 4096 <= Double(Int32.max) else {
-            throw BrainEngineError.invalidData("quantized edge weights overflow Int32")
+
+        let scale = try Self.chooseFixedPointScale(
+            positiveIncoming: positiveIncoming,
+            negativeIncoming: negativeIncoming,
+            positiveCounts: positiveCounts,
+            negativeCounts: negativeCounts,
+            initialScale: legacyScale)
+        if minNonZeroEdgeAbs.isFinite &&
+            minNonZeroEdgeAbs * Double(scale) < 0.5 {
+            throw BrainEngineError.invalidData(
+                "fixed-point scale would round a nonzero edge to zero")
         }
         let outputPointer = output.contents().bindMemory(to: Int32.self, capacity: e)
         c.colIdxData.withUnsafeBytes { colRaw in
             c.weightData.withUnsafeBytes { weightRaw in
                 for source in 0..<n {
                     let modulatory = c.modulatoryNts.contains(c.ntNames[Int(c.nt[source])])
-                    let rowGain = p.weightScale * (modulatory ? p.modScale : 1)
+                    let rowGain = modelWeightScale * (modulatory ? p.modScale : 1)
                     for edge in Int(c.rowStart[source])..<Int(c.rowStart[source + 1]) {
                         let target = Int(colRaw.loadUnaligned(fromByteOffset: edge * 4, as: UInt32.self))
                         let targetRole = c.roleNames[Int(c.role[target])]
@@ -523,8 +750,17 @@ final class MetalBrainSimulation {
                         } else {
                             gfGain = 1
                         }
+                        let targetGroup = mappedGroups[target]
+                        let relayGain: Float
+                        if targetGroup == UInt8(BrainGroup.odorRelayLeft) ||
+                            targetGroup == UInt8(BrainGroup.odorRelayRight) {
+                            relayGain = mappedInputs[source] == 0
+                                ? p.odorRelayBackgroundScale : p.odorRelaySensoryScale
+                        } else {
+                            relayGain = 1
+                        }
                         let rawWeight = Float(weightRaw.loadUnaligned(fromByteOffset: edge * 2, as: Int16.self))
-                        outputPointer[edge] = Int32((rawWeight * rowGain * gfGain * scale).rounded())
+                        outputPointer[edge] = Int32((rawWeight * rowGain * gfGain * relayGain * scale).rounded())
                     }
                 }
             }
@@ -535,10 +771,35 @@ final class MetalBrainSimulation {
     private func applySeed(_ value: UInt32) {
         seed = value
         let roleNames = connectome.roleNames
+        let explicitMale = connectome.modelID == BrainModel.maleCNS.rawValue &&
+            connectome.neuralMapping != nil
         for i in 0..<neuronCount {
             let role = roleNames[Int(connectome.role[i])]
             if sensoryKinds[i] != 0 {
                 baselinePointer[i] = 0
+            } else if explicitMale &&
+                        (groupOf[i] == UInt8(BrainGroup.odorRelayLeft) ||
+                         groupOf[i] == UInt8(BrainGroup.odorRelayRight)) {
+                // DM1_lPN relays are readouts of the odor pathway.  Their
+                // baseline must come from the graph, not a tonic engineered
+                // current, otherwise the single-neuron rate saturates before
+                // a bilateral odor probe can be observed.
+                baselinePointer[i] = 0
+            } else if explicitMale && groupOf[i] == UInt8(BrainGroup.escape) {
+                baselinePointer[i] = 0.002
+            } else if explicitMale && groupOf[i] == UInt8(BrainGroup.forward) {
+                // DNp09 is a sparse descending readout in Male CNS. Its
+                // explicit group has no role-table baseline, so use a
+                // Male-only engineered operating point while keeping the
+                // signal inside the graph. FlyWire retains its role-table
+                // baseline above.
+                baselinePointer[i] = 0.100
+            } else if explicitMale &&
+                        (groupOf[i] == UInt8(BrainGroup.turnLeft) ||
+                         groupOf[i] == UInt8(BrainGroup.turnRight) ||
+                         groupOf[i] == UInt8(BrainGroup.feeding) ||
+                         groupOf[i] == UInt8(BrainGroup.grooming)) {
+                baselinePointer[i] = groupOf[i] == UInt8(BrainGroup.feeding) ? 0 : 0.022
             } else if role == "gf" {
                 baselinePointer[i] = 0.002
             } else if role == "dnp09" {
@@ -579,7 +840,8 @@ final class MetalBrainSimulation {
             return currentReadout()
         }
         let start = DispatchTime.now().uptimeNanoseconds
-        let safeInput = Self.sanitize(input, enabled: sensoryEnabled, foodDrive: foodDrive)
+        let safeInput = Self.sanitize(input, enabled: sensoryEnabled, foodDrive: foodDrive,
+                                      maleModel: maleModel, tuning: tuning)
         var remaining = milliseconds
         while remaining > 0 {
             let batch = min(remaining, maxBatch)
@@ -590,7 +852,8 @@ final class MetalBrainSimulation {
         return currentReadout()
     }
 
-    private static func sanitize(_ input: SensoryInput, enabled: Bool, foodDrive: Float) -> [Float] {
+    private static func sanitize(_ input: SensoryInput, enabled: Bool, foodDrive: Float,
+                                 maleModel: Bool, tuning: BrainTuning) -> [Float] {
         guard enabled else { return [0, 0, 0, 0, 0, 0] }
         func clean(_ value: Float) -> Float {
             guard value.isFinite else { return 0 }
@@ -607,9 +870,10 @@ final class MetalBrainSimulation {
         let odorSum = odorLeft + odorRight
         let common = sqrt(odorSum * 0.5) * 0.22
         let contrast = max(-0.95, min(0.95, 10 * (odorLeft - odorRight) / max(0.02, odorSum)))
+        let tasteGain = maleModel ? tuning.maleTasteGain : 0.30
         return [min(0.22, common * (1 + contrast)) * motivation,
                 min(0.22, common * (1 - contrast)) * motivation,
-                clean(input.taste) * 0.30 * motivation,
+                clean(input.taste) * tasteGain * motivation,
                 clean(input.loomingLeft) * 0.34,
                 clean(input.loomingRight) * 0.34,
                 clean(input.touch) * 0.28]

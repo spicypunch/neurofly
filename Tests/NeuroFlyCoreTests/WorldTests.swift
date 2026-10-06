@@ -165,4 +165,40 @@ final class WorldTests: XCTestCase {
         decoder.calibrate(calibration)
         for _ in 0..<300 { XCTAssertEqual(decoder.decode(NeuralReadout(), dt: 1.0 / 30), MotorCommand()) }
     }
+
+    func testWeakMeasuredRelayLossStartsSearchButMemoryExpires() {
+        let calibration = BrainCalibration(
+            odorBalance: [.init(totalHz: 20, leftFraction: 0.5)],
+            odorActivationThresholdHz: 8)
+        var decoder = MotorDecoder()
+        decoder.calibrate(calibration)
+        for _ in 0..<30 {
+            XCTAssertEqual(decoder.decode(NeuralReadout(), dt: 1.0 / 30), MotorCommand())
+        }
+        let weak = NeuralReadout(forwardHz: 20, odorRelayLeftHz: 10, odorRelayRightHz: 10)
+        for _ in 0..<15 { _ = decoder.decode(weak, dt: 1.0 / 30) }
+        var search = MotorCommand()
+        for _ in 0..<30 {
+            search = decoder.decode(NeuralReadout(forwardHz: 20), dt: 1.0 / 30)
+        }
+        XCTAssertGreaterThan(abs(search.turnRate), 0.5,
+                             "Losing a real weak relay signal must allow a bounded reorientation")
+        for _ in 0..<240 {
+            search = decoder.decode(NeuralReadout(forwardHz: 20), dt: 1.0 / 30)
+        }
+        XCTAssertEqual(search.turnRate, 0, accuracy: 0.0001,
+                       "An old odor observation must not drive perpetual search")
+    }
+
+    func testMeasuredFeedingRequiresSustainedOutputBeyondABackgroundBurst() {
+        var decoder = MotorDecoder()
+        decoder.calibrate(BrainCalibration(odorActivationThresholdHz: 8,
+                                           feedingThresholdHz: 20))
+        let nearThreshold = NeuralReadout(feedingHz: 22)
+        XCTAssertNotEqual(decoder.decode(nearThreshold, dt: 1.0 / 30).activity, .feeding)
+        XCTAssertNotEqual(decoder.decode(NeuralReadout(), dt: 1.0 / 30).activity, .feeding)
+        var sustained = MotorCommand()
+        for _ in 0..<6 { sustained = decoder.decode(nearThreshold, dt: 1.0 / 30) }
+        XCTAssertEqual(sustained.activity, .feeding)
+    }
 }

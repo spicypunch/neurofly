@@ -18,7 +18,8 @@ final class DesktopSKView: SKView {
 
 @MainActor
 final class DesktopPetScene: SKScene {
-    private let flyNode = FlyNode()
+    private var flyNodes: [UUID: FlyNode] = [:]
+    private let legacyIndividualID = UUID()
     private let foodLayer = SKNode()
     private let shadowNode = ShadowNode()
     private let placementHintPanel = SKShapeNode(rectOf: CGSize(width: 350, height: 44), cornerRadius: 12)
@@ -34,8 +35,6 @@ final class DesktopPetScene: SKScene {
         foodLayer.zPosition = 2
         addChild(shadowNode)
         shadowNode.zPosition = 3
-        addChild(flyNode)
-        flyNode.zPosition = 10
         setupPlacementHint()
     }
 
@@ -48,17 +47,13 @@ final class DesktopPetScene: SKScene {
         foodLayer.zPosition = 2
         addChild(shadowNode)
         shadowNode.zPosition = 3
-        addChild(flyNode)
-        flyNode.zPosition = 10
         setupPlacementHint()
     }
 
     func apply(_ snapshot: WorldSnapshot) {
         let width = max(1, snapshot.width)
         let height = max(1, snapshot.height)
-        flyNode.apply(snapshot.fly, elapsed: snapshot.elapsed)
-        flyNode.position = CGPoint(x: snapshot.fly.position.x / width * Double(size.width),
-                                   y: snapshot.fly.position.y / height * Double(size.height))
+        renderFlies(snapshot, width: width, height: height)
 
         let ids = Set(snapshot.foods.map(\.id))
         for (id, node) in foodNodes where !ids.contains(id) {
@@ -74,10 +69,9 @@ final class DesktopPetScene: SKScene {
                 foodNodes[food.id] = node
                 foodLayer.addChild(node)
             }
+            node.apply(food)
             node.position = CGPoint(x: food.position.x / width * Double(size.width),
                                     y: food.position.y / height * Double(size.height))
-            let localFood = FoodItem(id: food.id, position: Point2(x: node.position.x, y: node.position.y), remaining: food.remaining)
-            node.apply(localFood)
         }
 
         if let shadowPosition = snapshot.shadowPosition, snapshot.shadowStrength > 0.001 {
@@ -87,6 +81,37 @@ final class DesktopPetScene: SKScene {
                              strength: snapshot.shadowStrength, elapsed: snapshot.elapsed)
         } else {
             shadowNode.isHidden = true
+        }
+    }
+
+    private func renderFlies(_ snapshot: WorldSnapshot, width: Double, height: Double) {
+        let individuals = neuroFlyRenderIndividuals(snapshot, legacyID: legacyIndividualID)
+        let ids = Set(individuals.map(\.id))
+        for (id, node) in flyNodes where !ids.contains(id) {
+            node.removeFromParent()
+            flyNodes.removeValue(forKey: id)
+        }
+
+        let showLabels = individuals.count > 1
+        for individual in individuals {
+            let node: FlyNode
+            if let existing = flyNodes[individual.id] {
+                node = existing
+            } else {
+                node = FlyNode()
+                flyNodes[individual.id] = node
+                addChild(node)
+            }
+            node.apply(individual.fly,
+                       elapsed: snapshot.elapsed,
+                       phaseOffset: Double(individual.ordinal) * 0.73,
+                       accent: NeuroFlyStyle.skIndividualColor(ordinal: individual.ordinal),
+                       selected: individual.isSelected,
+                       ordinal: individual.ordinal + 1,
+                       showIdentity: showLabels)
+            node.position = CGPoint(x: individual.fly.position.x / width * Double(size.width),
+                                    y: individual.fly.position.y / height * Double(size.height))
+            node.zPosition = individual.isSelected ? 12 : 10
         }
     }
 
@@ -140,6 +165,7 @@ final class DesktopModeController: NSObject, NSWindowDelegate {
     private let scene = DesktopPetScene(size: CGSize(width: 1440, height: 900))
     private var latestSnapshot = WorldSnapshot()
     private var selectedTool: ArenaTool = .food
+    private var selectedFoodKind: FoodKind = .banana
     private var placementMode = false
     private var lastNotifiedResize = CGSize.zero
 
@@ -193,9 +219,10 @@ final class DesktopModeController: NSObject, NSWindowDelegate {
         }
     }
 
-    func armPlacement(for tool: ArenaTool) {
+    func armPlacement(for tool: ArenaTool, foodKind: FoodKind = .banana) {
         guard isActive else { return }
         selectedTool = tool
+        selectedFoodKind = foodKind
         isPetVisible = true
         placementMode = true
         scene.showPlacementHint(for: tool)
@@ -216,6 +243,11 @@ final class DesktopModeController: NSObject, NSWindowDelegate {
     func setTool(_ tool: ArenaTool) {
         selectedTool = tool
         controlPanel?.setTool(tool)
+    }
+
+    func setFoodKind(_ kind: FoodKind) {
+        selectedFoodKind = kind
+        controlPanel?.setFoodKind(kind)
     }
 
     private func createOverlay() {
@@ -248,6 +280,7 @@ final class DesktopModeController: NSObject, NSWindowDelegate {
         let panel = DesktopControlPanel()
         panel.onPlacement = { [weak self] in self?.beginPlacement() }
         panel.onTool = { [weak self] tool in self?.setTool(tool) }
+        panel.onFoodKind = { [weak self] kind in self?.setFoodKind(kind) }
         panel.onClear = { [weak self] in self?.onAction?(.clearFood) }
         panel.onBack = { [weak self] in self?.onBackToArena?() }
         panel.onShowBrain = { [weak self] in self?.onShowBrain?() }
@@ -288,7 +321,7 @@ final class DesktopModeController: NSObject, NSWindowDelegate {
                                 y: Double(y / frame.height) * height)
         switch selectedTool {
         case .food:
-            onAction?(.placeFood(modelPoint))
+            onAction?(.placeFoodKind(modelPoint, selectedFoodKind))
         case .shadow:
             onAction?(.castShadow(modelPoint))
         case .touch:
@@ -356,6 +389,7 @@ private extension DesktopModeController {
 final class DesktopControlPanel: NSPanel {
     var onPlacement: (() -> Void)?
     var onTool: ((ArenaTool) -> Void)?
+    var onFoodKind: ((FoodKind) -> Void)?
     var onClear: (() -> Void)?
     var onBack: (() -> Void)?
     var onShowBrain: (() -> Void)?
@@ -364,6 +398,7 @@ final class DesktopControlPanel: NSPanel {
     private let statusLabel = NSTextField(labelWithString: "통과 모드 · 화면 클릭은 원래 앱으로 전달됩니다")
     private let placementButton = NSButton(title: "클릭으로 배치", target: nil, action: nil)
     private var toolButtons: [ArenaTool: NSButton] = [:]
+    private var foodKindButtons: [FoodKind: NSButton] = [:]
     private var placementActive = false
 
     init() {
@@ -380,7 +415,12 @@ final class DesktopControlPanel: NSPanel {
 
     func update(_ snapshot: WorldSnapshot) {
         let model = snapshot.error == nil ? (snapshot.isReady ? "신경망 연결됨" : "신경망 초기화 중") : "오류: \(snapshot.error ?? "알 수 없음")"
-        statusLabel.stringValue = placementActive ? model + " · 배치 중 — Escape로 취소" : model + " · 통과 모드"
+        let count = max(1, snapshot.individuals.count)
+        let selectedOrdinal = snapshot.individuals.first(where: { $0.id == snapshot.selectedIndividualID })?.ordinal ?? 0
+        let selection = "\(snapshot.brainModel.displayName) · 선택 개체 #\(selectedOrdinal + 1) · 총 \(count)개"
+        statusLabel.stringValue = placementActive
+            ? "\(model) · \(selection) · 배치 중 — Escape로 취소"
+            : "\(model) · \(selection) · 통과 모드"
         statusLabel.textColor = snapshot.error == nil ? NeuroFlyStyle.mutedInk : NeuroFlyStyle.coral
     }
 
@@ -388,6 +428,13 @@ final class DesktopControlPanel: NSPanel {
         for (candidate, button) in toolButtons {
             button.state = candidate == tool ? .on : .off
             button.contentTintColor = candidate == tool ? NeuroFlyStyle.cream : NeuroFlyStyle.ink
+        }
+    }
+
+    func setFoodKind(_ kind: FoodKind) {
+        for (candidate, button) in foodKindButtons {
+            button.state = candidate == kind ? .on : .off
+            button.contentTintColor = candidate == kind ? candidate.neuroFlyColor : NeuroFlyStyle.ink
         }
     }
 
@@ -445,6 +492,22 @@ final class DesktopControlPanel: NSPanel {
         }
         stack.addArrangedSubview(tools)
 
+        let foods = NSStackView()
+        foods.orientation = .horizontal
+        foods.spacing = 5
+        for kind in [FoodKind.banana, FoodKind.berry] {
+            let button = NSButton(title: kind.displayName, target: self, action: #selector(foodKindPressed(_:)))
+            button.identifier = NSUserInterfaceItemIdentifier(kind.rawValue)
+            button.setButtonType(.radio)
+            button.bezelStyle = .texturedRounded
+            button.controlSize = .small
+            button.font = .systemFont(ofSize: 10, weight: .medium)
+            button.widthAnchor.constraint(equalToConstant: 72).isActive = true
+            foods.addArrangedSubview(button)
+            foodKindButtons[kind] = button
+        }
+        stack.addArrangedSubview(foods)
+
         placementButton.target = self
         placementButton.action = #selector(placementPressed)
         placementButton.bezelStyle = .rounded
@@ -473,6 +536,7 @@ final class DesktopControlPanel: NSPanel {
         lower.addArrangedSubview(back)
         stack.addArrangedSubview(lower)
         setTool(.food)
+        setFoodKind(.banana)
     }
 
     @objc private func placementPressed() { onPlacement?() }
@@ -480,6 +544,11 @@ final class DesktopControlPanel: NSPanel {
     @objc private func toolPressed(_ sender: NSButton) {
         guard let raw = sender.identifier?.rawValue, let tool = ArenaTool(rawValue: raw) else { return }
         onTool?(tool)
+    }
+
+    @objc private func foodKindPressed(_ sender: NSButton) {
+        guard let raw = sender.identifier?.rawValue, let kind = FoodKind(rawValue: raw) else { return }
+        onFoodKind?(kind)
     }
 
     @objc private func clearPressed() { onClear?() }

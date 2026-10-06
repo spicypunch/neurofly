@@ -3,7 +3,10 @@
 dist/
 artifacts/
 .venv-reference/
+.venv-malecns/
 data/*.bin
+data/malecns/raw/
+data/malecns/*.bin
 __pycache__/
 *.pyc
 .env

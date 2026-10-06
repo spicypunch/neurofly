@@ -7,14 +7,19 @@ if [[ ! -f data/neurons.bin || ! -f data/synapses.bin ]]; then
   print -u2 '연결 데이터가 없습니다. 먼저 python3 scripts/fetch-data.py 를 실행하세요.'
   exit 1
 fi
+if [[ ! -f data/malecns/connectome.json || ! -f data/malecns/neurons.bin || ! -f data/malecns/synapses.bin ]]; then
+  print -u2 'MaleCNS 연결 데이터가 없습니다. 먼저 scripts/fetch-malecns.py로 데이터를 준비하세요.'
+  exit 1
+fi
 swift build -c release
 app_dir="$project_root/dist/NeuroFly.app"
-mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources/data"
+mkdir -p "$app_dir/Contents/MacOS" "$app_dir/Contents/Resources/data/malecns"
 cp .build/release/NeuroFly "$app_dir/Contents/MacOS/NeuroFly"
 cp -R .build/release/NeuroFly_NeuroFlyCore.bundle "$app_dir/Contents/Resources/"
 # The signed app loads its own kernel first, without SwiftPM's absolute build-path fallback.
 cp Sources/NeuroFlyCore/Resources/LIF.metal "$app_dir/Contents/Resources/LIF.metal"
 cp data/connectome.json data/neurons.bin data/synapses.bin data/DATA_LICENSE.md "$app_dir/Contents/Resources/data/"
+cp data/malecns/connectome.json data/malecns/neurons.bin data/malecns/synapses.bin data/malecns/DATA_LICENSE.md "$app_dir/Contents/Resources/data/malecns/"
 cp ThirdParty/SiliconFly-LICENSE "$app_dir/Contents/Resources/"
 cat > "$app_dir/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -25,8 +30,8 @@ cat > "$app_dir/Contents/Info.plist" <<'PLIST'
   <key>CFBundleName</key><string>NeuroFly</string>
   <key>CFBundleDisplayName</key><string>NeuroFly</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>0.1.0</string>
-  <key>CFBundleVersion</key><string>1</string>
+  <key>CFBundleShortVersionString</key><string>0.2.0</string>
+  <key>CFBundleVersion</key><string>2</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>

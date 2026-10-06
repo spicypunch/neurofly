@@ -33,13 +33,32 @@ public struct BrainCalibration: Codable, Sendable {
     public var baseline: NeuralReadout
     public var odorBalance: [OdorBalance]
     public var odorResponses: [OdorResponse]
+    /// Male CNS uses a measured MN9 separation because its explicit output
+    /// baseline and taste response are lower than the legacy FlyWire tuning.
+    /// These fields are absent from older archives and remain nil there.
+    /// The odor threshold is likewise optional so older FlyWire archives keep
+    /// the historical decoder gate.  It is derived from the lowest measured
+    /// bilateral relay response for Male CNS, whose sparse relay rates are
+    /// otherwise below the old fixed 30 Hz gate at long range.
+    public var odorActivationThresholdHz: Double?
+    public var feedingOdorOnlyHz: Double?
+    public var feedingTasteAndOdorHz: Double?
+    public var feedingThresholdHz: Double?
 
     public init(baseline: NeuralReadout = NeuralReadout(),
                 odorBalance: [OdorBalance] = [],
-                odorResponses: [OdorResponse] = []) {
+                odorResponses: [OdorResponse] = [],
+                odorActivationThresholdHz: Double? = nil,
+                feedingOdorOnlyHz: Double? = nil,
+                feedingTasteAndOdorHz: Double? = nil,
+                feedingThresholdHz: Double? = nil) {
         self.baseline = baseline
         self.odorBalance = odorBalance
         self.odorResponses = odorResponses
+        self.odorActivationThresholdHz = odorActivationThresholdHz
+        self.feedingOdorOnlyHz = feedingOdorOnlyHz
+        self.feedingTasteAndOdorHz = feedingTasteAndOdorHz
+        self.feedingThresholdHz = feedingThresholdHz
     }
 
     public func balancedLeftFraction(total: Double) -> Double {
@@ -153,6 +172,53 @@ public struct BrainCalibration: Codable, Sendable {
                 return $0.meanConcentration < $1.meanConcentration
             }
             return $0.contrast < $1.contrast
+        }
+
+        if brain.model == .maleCNS,
+           let weakestMeasuredRelay = calibration.odorBalance.map(\.totalHz)
+               .filter({ $0.isFinite && $0 > 0 }).min() {
+            // Male CNS's lowest measured symmetric relay response is about
+            // 6.6 Hz, while no-input relay activity is zero.  Keep a small
+            // floor above that noise-free baseline, but below the 20--30 Hz
+            // long-range responses observed in the foraging trace.  The
+            // legacy FlyWire decoder remains on its established 30 Hz gate.
+            calibration.odorActivationThresholdHz = max(8, min(30, weakestMeasuredRelay * 1.2))
+        }
+
+        // Male CNS has a sparse explicit MN9 mapping and a different
+        // engineered operating point from FlyWire. Measure the actual output
+        // separation through the graph, keeping odor-only and taste+odor
+        // probes distinct. No food coordinates or world state enter either
+        // probe. FlyWire retains its historical baseline-relative threshold.
+        if brain.model == .maleCNS {
+            let odorOnly = try probe(brain: brain, seed: seed,
+                                     input: SensoryInput(odorLeft: 0.5,
+                                                         odorRight: 0.5),
+                                     stimulusSteps: 20, tailSteps: 10)
+            let tasteAndOdor = try probe(brain: brain, seed: seed,
+                                         input: SensoryInput(odorLeft: 0.5,
+                                                             odorRight: 0.5,
+                                                             taste: 1),
+                                         stimulusSteps: 20, tailSteps: 10)
+            let odorHz = Double(odorOnly.feedingHz)
+            let tasteHz = Double(tasteAndOdor.feedingHz)
+            let separation = tasteHz - odorHz
+            if odorHz.isFinite, tasteHz.isFinite, separation.isFinite,
+               separation > 2 {
+                calibration.feedingOdorOnlyHz = odorHz
+                calibration.feedingTasteAndOdorHz = tasteHz
+                // Use the larger of the no-input and odor-only envelopes so
+                // calibration variance cannot turn spontaneous MN9 activity
+                // into feeding. The midpoint still leaves a measured margin
+                // before the taste+odor signal and remains the actual MN9
+                // output used by MotorDecoder.
+                let nonFeedingEnvelope = max(Double(calibration.baseline.feedingHz), odorHz)
+                let measuredSeparation = tasteHz - nonFeedingEnvelope
+                if measuredSeparation > 2 {
+                    calibration.feedingThresholdHz = nonFeedingEnvelope +
+                        measuredSeparation * 0.5
+                }
+            }
         }
         try prepare(brain: brain, seed: seed)
         return calibration
