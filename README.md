@@ -12,7 +12,7 @@
 <img alt="Metal GPU compute" src="https://img.shields.io/badge/Compute-Metal-284D3F?style=flat-square" />
 <img alt="독립 개체 1–4마리" src="https://img.shields.io/badge/Pets-1–4-416653?style=flat-square" />
 
-[빠른 시작](#빠른-시작) · [사용하기](#사용하기) · [어떻게 움직이나요](#어떻게-움직이나요) · [검증](#검증) · [데이터와 이용 조건](#데이터와-이용-조건)
+[앱 다운로드](#앱-다운로드) · [소스 빌드](#빠른-시작) · [사용하기](#사용하기) · [어떻게 움직이나요](#어떻게-움직이나요) · [검증](#검증) · [데이터와 이용 조건](#데이터와-이용-조건)
 
 </div>
 
@@ -63,6 +63,20 @@
 > 허기·연합 기억·감각 입력 변환·운동 해석에는 앱에서 설계한 규칙이 들어갑니다.
 > 생물의 뇌 전체나 실제 비행을 완전히 재현한 모델은 아니며, Codex 내장 펫과 별도로 실행합니다.
 
+## 앱 다운로드
+
+**[NeuroFly 0.2.0 미리보기 다운로드 · Apple Silicon](https://github.com/spicypunch/neurofly/releases/download/v0.2.0/NeuroFly-0.2.0-macos-arm64.zip)**
+
+macOS 15 이상에서 ZIP을 풀고 `NeuroFly.app`을 응용 프로그램 폴더로 옮겨 실행하세요.
+두 뇌 데이터가 포함되어 있어 **Xcode·Python·추가 다운로드 없이** 실행할 수 있습니다.
+현재 실행 파일은 Apple Silicon 전용입니다.
+
+이 미리보기는 **ad hoc 서명이며 Apple 공증을 받지 않았습니다.** 첫 실행 시 macOS가 차단하면
+앱을 열려고 시도한 뒤 `시스템 설정 → 개인정보 보호 및 보안 → 그래도 열기`에서 앱별로 허용할 수 있습니다.
+관리되는 Mac에서는 이 옵션이 제한될 수 있습니다.
+
+[설치·서명 안내](docs/install.md) · [릴리스와 SHA-256 확인 파일](https://github.com/spicypunch/neurofly/releases/tag/v0.2.0)
+
 ## 빠른 시작
 
 ### 준비물
@@ -97,6 +111,9 @@ open dist/NeuroFly.app
 - 로컬 빌드는 ad hoc 서명입니다. Apple 공증 배포본은 아니며, 로그인 시 자동 실행도 등록하지 않습니다.
 
 Male CNS 원본 파일·변환 규칙·재현 절차는 [데이터 준비 안내](scripts/README-malecns.md)에 있습니다.
+
+배포 ZIP을 직접 만들려면 데이터를 준비한 뒤 `./scripts/package-release.sh`를 실행합니다.
+앱을 빌드하고 설치 안내·이용 조건·SHA-256 확인 파일을 `dist/`에 생성합니다.
 
 ## 사용하기
 

@@ -22,6 +22,28 @@ FlyWire 허기·개체군 산출물은 2026-10-02 기록을 유지했습니다. 
 두 모델의 원본과 파생 compact graph는 서로 다른 데이터셋과 이용 조건으로 배포합니다.
 Male CNS의 source row 경계, attribution, signed-weight 정책은 [`data/malecns/DATA_LICENSE.md`](../data/malecns/DATA_LICENSE.md)에 기록했습니다.
 
+## 다운로드 배포본 — 2026-10-06
+
+`scripts/package-release.sh`로 macOS 15 이상, Apple Silicon 전용 0.2.0 ZIP을 생성했습니다.
+ZIP은 129,131,788 bytes이며 앱, 설치 안내, 데이터·원 코드 고지를 포함합니다.
+별도의 SHA-256 확인 파일도 생성합니다.
+
+ZIP을 저장소 밖의 임시 폴더에 풀고 다음을 확인했습니다.
+
+- 압축 해제 후 `codesign --verify --deep --strict` 통과
+- `arm64` 실행 파일, 최소 macOS 15.0, 실행 권한 유지
+- 저장소 데이터 경로를 지정하지 않고 앱에 포함된 두 모델의 `--probe` 실행
+- FlyWire 139,255 neurons / 15,091,983 edges, Male CNS 166,700 / 25,582,938 로딩
+- 설치 안내, FlyWire·Male CNS 데이터 이용 조건과 SiliconFly 고지 포함
+- 생성 ZIP의 SHA-256 확인 통과
+
+현재는 **ad hoc 서명이며 Apple 공증을 받지 않았습니다.** 서명 무결성 검사는 Developer ID나
+Gatekeeper의 배포 승인을 의미하지 않습니다. 다운로드 격리가 적용된 앱의 첫 GUI 실행을
+다른 Mac에서 확인하지는 않았습니다. [설치 안내](install.md)에 Apple의 앱별 허용 절차를 기록했습니다.
+
+배포 파일의 크기·SHA-256과 검사 결과는 [verification-summary.json](verification-summary.json)의
+`distribution`에 있습니다. 기존 26개 GUI 확인은 이 소스의 로컬 실행 기록입니다.
+
 ## 코어 테스트
 
 ```sh

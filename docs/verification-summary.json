@@ -2080,5 +2080,33 @@
     ],
     "remainingBlockers": [],
     "verificationGap": "Engine failure injection followed by reset/model recovery has not been exercised in an integration test; code review confirms the recovery path and normal GUI reset was exercised."
+  },
+  "distribution": {
+    "version": "0.2.0",
+    "architecture": "arm64",
+    "minimumMacOS": "15.0",
+    "codeSignatureIntegrity": "passed",
+    "signatureType": "ad hoc",
+    "notarized": false,
+    "archive": "NeuroFly-0.2.0-macos-arm64.zip",
+    "archiveBytes": 129131788,
+    "archiveSHA256": "5f595fb332a174aa8f3aa1d329810eb924de935753c49fa2d5630f03137c6361",
+    "licenseAndInstallFilesIncluded": true,
+    "models": {
+      "flywire-v783": {
+        "neurons": 139255,
+        "edges": 15091983,
+        "standaloneProbe": "passed"
+      },
+      "malecns": {
+        "neurons": 166700,
+        "edges": 25582938,
+        "standaloneProbe": "passed"
+      }
+    },
+    "scope": "Extracted ZIP in a temporary folder outside the repository; both packaged data models and Metal kernel loaded. A downloaded quarantined GUI launch on a second Mac has not been tested.",
+    "recordedDateKST": "2026-10-06",
+    "releaseURL": "https://github.com/spicypunch/neurofly/releases/tag/v0.2.0",
+    "downloadURL": "https://github.com/spicypunch/neurofly/releases/download/v0.2.0/NeuroFly-0.2.0-macos-arm64.zip"
   }
 }
